@@ -10,9 +10,9 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <raylib.h>
-#include <vector>
 
 namespace rotm
 {
