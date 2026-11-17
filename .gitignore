@@ -1,0 +1,8 @@
+/.cache
+/.vscode
+/bin
+/obj
+/utilities
+compile_commands.json
+*.ini
+*.bat
