@@ -2,7 +2,6 @@
 
 #include "core_module.hpp"
 #include "logger.hpp"
-#include "raylib.h"
 #include "resource_manager.hpp"
 #include "resource_texture.hpp"
 #include "scene.hpp"
@@ -20,6 +19,7 @@
 #include <utility>
 
 #include <imgui.h>
+#include <raylib.h>
 
 namespace rotm
 {
