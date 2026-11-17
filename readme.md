@@ -19,4 +19,4 @@ Requires GCC 16+ and GNU Make. All external code is built at compilation time an
 
 Navigate to the project directory and run ```mingw32-make MODE=release```. Other modes: debug, profile (Tracy support)
 
-To run the application, execute ```./bin/[MODE]/rotm.exe``` or ```mingw32-make run MODE=release```.
+To run the application, execute ```./bin/[MODE]/rotm.exe``` or ```mingw32-make run MODE=[MODE]```.
