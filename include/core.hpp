@@ -124,6 +124,10 @@ class Core
     double m_secondsSinceTick = 0.0;
     unsigned long long m_tickCount = 0;
 
+    int m_lastWindowWidth = 0;
+    int m_lastWindowHeight = 0;
+    bool m_isFullscreen = false;
+
     std::unique_ptr<GuiContext> m_guiContext;
 
     std::unique_ptr<CoreModule> m_moduleActive;

@@ -118,6 +118,23 @@ void Core::update()
 
     m_moduleActive->update();
 
+    if (IsKeyPressed(KEY_F11))
+    {
+        if (!m_isFullscreen)
+        {
+            m_lastWindowWidth = GetScreenWidth();
+            m_lastWindowHeight = GetScreenHeight();
+
+            SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
+            ToggleFullscreen();
+        }
+        else
+        {
+            ToggleFullscreen();
+            SetWindowSize(m_lastWindowWidth, m_lastWindowHeight);
+        }
+    }
+
     if (IsKeyPressed(KEY_F12))
     {
         const std::string screenshotFileName = generate_screenshot_filename();
