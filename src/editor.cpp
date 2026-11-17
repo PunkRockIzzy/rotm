@@ -289,7 +289,7 @@ void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilema
 
     if (core.is_dev_mode())
     {
-        m_scene->render.tilemap.set_show_chunk_borders(true);
+        m_scene->render.tilemap.showChunkBorders = true;
     }
 
     write_tileset_metadata(m_scene->tileset, m_tilesetFilename);
@@ -452,11 +452,9 @@ void Editor::handle_shortcuts()
             switch (static_cast<EditTool>(number))
             {
             case Pencil:
-                m_editTool = Pencil;
-                break;
-
+            case Brush:
             case Eraser:
-                m_editTool = Eraser;
+                m_editTool = static_cast<EditTool>(number);
                 break;
 
             default:
@@ -507,6 +505,25 @@ void Editor::handle_shortcuts()
             case KEY_GRAVE:
                 begin_init_stress_test();
                 break;
+            }
+        }
+        else
+        {
+            switch (keyPressed)
+            {
+            case KEY_GRAVE:
+                m_windowLog.active = !m_windowLog.active;
+                break;
+
+            case KEY_F3:
+                m_windowStats.active = !m_windowStats.active;
+                break;
+
+            case KEY_F4: {
+                TilemapRenderer &renderer = m_scene->render.tilemap;
+
+                renderer.showChunkBorders = !renderer.showChunkBorders;
+            }
             }
         }
 
@@ -1019,6 +1036,11 @@ void Editor::child_scene_editor_toolbox(const ImVec2 &windowMax)
     ImGui::SetItemTooltip("Place tiles at mouse position. Configurable size.");
     ImGui::EndDisabled();
 
+    ImGui::BeginDisabled(m_editTool == Brush);
+    const bool clickedBrush = ImGui::Button("Brush", {buttonWidth, 0.0f});
+    ImGui::SetItemTooltip("Place tiles using prefabricated patterns.");
+    ImGui::EndDisabled();
+
     ImGui::BeginDisabled(m_editTool == Eraser);
     const bool clickedEraser = ImGui::Button("Eraser", {buttonWidth, 0.0f});
     ImGui::SetItemTooltip("Remove tiles at mouse position. Configurable size.");
@@ -1027,6 +1049,10 @@ void Editor::child_scene_editor_toolbox(const ImVec2 &windowMax)
     if (clickedPencil)
     {
         m_editTool = Pencil;
+    }
+    else if (clickedBrush)
+    {
+        m_editTool = Brush;
     }
     else if (clickedEraser)
     {
@@ -1127,6 +1153,10 @@ void Editor::child_scene_editor_tooloptions(const ImVec2 &size)
         ImGui::SliderInt("Pencil height", &m_windowSceneEditor.pencilTileHeight, 1, PENCIL_SIZE_MAX);
         break;
 
+    case Brush:
+        child_scene_editor_tooloptions_brusheditor();
+        break;
+
     case Eraser:
         ImGui::SliderInt("Eraser width", &m_windowSceneEditor.eraserTileWidth, 1, ERASER_SIZE_MAX);
         ImGui::SliderInt("Eraser height", &m_windowSceneEditor.eraserTileHeight, 1, ERASER_SIZE_MAX);
@@ -1138,6 +1168,10 @@ void Editor::child_scene_editor_tooloptions(const ImVec2 &size)
     }
 
     ImGui::EndChild();
+}
+
+void Editor::child_scene_editor_tooloptions_brusheditor()
+{
 }
 
 void Editor::window_stats()

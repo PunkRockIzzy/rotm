@@ -116,6 +116,7 @@ class Editor final : public CoreModule
     void child_scene_editor_toolbox(const ImVec2 &size);
     void child_scene_editor_tilepalette(const ImVec2 &size);
     void child_scene_editor_tooloptions(const ImVec2 &size);
+    void child_scene_editor_tooloptions_brusheditor();
 
     void window_stats();
 
@@ -157,6 +158,7 @@ class Editor final : public CoreModule
     {
         None = 0,
         Pencil,
+        Brush,
         Eraser,
         Count
     } m_editTool = EditTool::Pencil;
