@@ -6,7 +6,7 @@ INCLUDEDIR := include
 CXX := g++
 CXXFLAGS := -Wall -Wextra -Wpedantic -std=gnu++26 -MMD \
 -I$(INCLUDEDIR) \
--Iexternal/raylib/include \
+-Iexternal/raylib/src \
 -Iexternal/rlImGui/include \
 -Iexternal/mINI/include
 
@@ -17,6 +17,15 @@ BINDIR := bin/$(MODE)
 
 SRCS := $(wildcard $(SRCDIR)/*.cpp)
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
+
+RAYLIB_SRCDIR := external/raylib/src
+RAYLIB_OBJDIR := $(OBJDIR)/raylib
+RAYLIB_SRCS := $(wildcard $(RAYLIB_SRCDIR)/*.c)
+RAYLIB_OBJS := $(patsubst $(RAYLIB_SRCDIR)/%.c,$(RAYLIB_OBJDIR)/%.o,$(RAYLIB_SRCS))
+RAYLIB_CFLAGS := -Wall -D_GNU_SOURCE -DPLATFORM_DESKTOP_GLFW -DGRAPHICS_API_OPENGL_33 \
+-Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing -std=c99 -DUNICODE -MMD \
+-O1 -Werror=implicit-function-declaration -Iexternal/raylib/src \
+-Iexternal/raylib/src/external/glfw/include
 
 EXE := .exe
 
@@ -37,15 +46,15 @@ else
 endif
 
 LDFLAGS := -Lexternal/raylib/lib -Lexternal/rlImGui/lib
-LDLIBS := -lstdc++exp -lraylib -lrlImGui -lgdi32 -lwinmm
+LDLIBS := -lstdc++exp -lrlImGui -lgdi32 -lwinmm
 
 all: $(TARGET)
 
 run: $(TARGET)
 	@$(TARGET) -dev
 
-$(TARGET): $(OBJS) $(OBJDIR)/imgui_stdlib.o | $(BINDIR)
-	g++ $(OBJS) $(OBJDIR)/imgui_stdlib.o -o $@ $(LDFLAGS) $(LDLIBS)
+$(TARGET): $(OBJS) $(OBJDIR)/imgui_stdlib.o $(RAYLIB_OBJS) | $(BINDIR)
+	g++ $(OBJS) $(OBJDIR)/imgui_stdlib.o $(RAYLIB_OBJS) -o $@ $(LDFLAGS) $(LDLIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 	$(CXX) $(BUILD_CXXFLAGS) -c $< -o $@
@@ -53,15 +62,15 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 $(OBJDIR)/imgui_stdlib.o: external/rlImGui/src/imgui_stdlib.cpp
 	$(CXX) $(BUILD_CXXFLAGS) -c $< -o $@
 
-$(OBJDIR):
-	mkdir$(EXE) -p $(OBJDIR)
+$(RAYLIB_OBJDIR)/%.o: $(RAYLIB_SRCDIR)/%.c | $(RAYLIB_OBJDIR)
+	gcc $(RAYLIB_CFLAGS) -c $< -o $@
 
-$(BINDIR):
-	mkdir$(EXE) -p $(BINDIR)
+$(OBJDIR) $(RAYLIB_OBJDIR) $(BINDIR):
+	mkdir$(EXE) -p $@
 
 clean:
 	rm$(EXE) -rf obj bin
 
-.PHONY: all clean
+.PHONY: all run clean
 
--include $(OBJS:.o=.d)
+-include $(OBJS:.o=.d) $(RAYLIB_OBJS:.o=.d)
