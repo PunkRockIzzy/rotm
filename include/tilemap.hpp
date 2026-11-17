@@ -11,138 +11,155 @@
 
 namespace rotm
 {
-	using ChunkCoord = Vec2I;
-	using LocalTileCoord = Vec2I;
-	
-	struct GlobalTileCoord
-	{
-		ChunkCoord chunk;
-		LocalTileCoord tile;
+using ChunkCoord = Vec2I;
+using LocalTileCoord = Vec2I;
 
-		constexpr auto operator<=>(const GlobalTileCoord& other) const noexcept = default;
-	};
+struct GlobalTileCoord
+{
+    ChunkCoord chunk;
+    LocalTileCoord tile;
 
-	struct TileData
-	{
-		using IDType = int;
+    constexpr auto operator<=>(const GlobalTileCoord &other) const noexcept = default;
+};
 
-		static constexpr IDType ID_NULL = -1;
+struct TileData
+{
+    using IDType = int;
 
-		IDType id = ID_NULL;
+    static constexpr IDType ID_NULL = -1;
 
-		bool operator==(const TileData& other) const noexcept = default;
-	};
-	
-	class TilemapChunk
-	{
-	public: /* Static properties */
-		static constexpr std::size_t SIZE = 32;
-		
-	public: /* Types */
-		using Data = std::array<std::array<TileData, SIZE>, SIZE>;
+    IDType id = ID_NULL;
 
-	public: /* Methods */
-		TilemapChunk() = default;
-		
-		TilemapChunk(const TilemapChunk& other) :
-			m_data(other.m_data),
-			m_tileCount(other.m_tileCount),
-			m_dirty(true)
-		{}
+    bool operator==(const TileData &other) const noexcept = default;
+};
 
-		TilemapChunk(TilemapChunk&& other) noexcept :
-			m_data(std::move(other.m_data)),
-			m_tileCount(other.m_tileCount),
-			m_dirty(true)
-		{}
+class TilemapChunk
+{
+  public: /* Static properties */
+    static constexpr std::size_t SIZE = 32;
 
-		TilemapChunk& operator=(const TilemapChunk& other)
-		{
-			m_data = other.m_data;
-			m_tileCount = other.m_tileCount;
-			m_dirty = true;
+  public: /* Types */
+    using Data = std::array<std::array<TileData, SIZE>, SIZE>;
 
-			return *this;
-		}
+  public: /* Methods */
+    TilemapChunk() = default;
+    ~TilemapChunk() = default;
 
-		TilemapChunk& operator=(TilemapChunk&& other) noexcept
-		{
-			m_data = std::move(other.m_data);
-			m_tileCount = other.m_tileCount;
-			m_dirty = true;
+    TilemapChunk(const TilemapChunk &other) : m_data(other.m_data), m_tileCount(other.m_tileCount), m_dirty(true)
+    {
+    }
 
-			return *this;
-		}
-	
-		const Data& get_data() const { return m_data; }
-		
-		std::size_t get_tile_count() const { return m_tileCount; }
-		bool empty() const { return m_tileCount == 0; }
-		
-		bool get_dirty() const { return m_dirty; }
-		void set_dirty(bool dirty) { m_dirty = dirty; }
+    TilemapChunk(TilemapChunk &&other) noexcept
+        : m_data(std::move(other.m_data)), m_tileCount(other.m_tileCount), m_dirty(true)
+    {
+    }
 
-		const TileData& get_tile(LocalTileCoord coord) const;
-		void set_tile(LocalTileCoord coord, const TileData& source);
+    TilemapChunk &operator=(const TilemapChunk &other)
+    {
+        m_data = other.m_data;
+        m_tileCount = other.m_tileCount;
+        m_dirty = true;
 
-		void clear();
-		
-	private: /* Fields */
-		Data m_data;
-		std::size_t m_tileCount = 0;
-		bool m_dirty = true;
-	};
-	
-	class Tilemap
-	{
-	public:
-		using Data = std::unordered_map<ChunkCoord, TilemapChunk>;
+        return *this;
+    }
 
-		const Data& get_data() const { return m_data; }
-		
-		TilemapChunk& operator[](ChunkCoord coord) { return m_data[coord]; }
+    TilemapChunk &operator=(TilemapChunk &&other) noexcept
+    {
+        m_data = std::move(other.m_data);
+        m_tileCount = other.m_tileCount;
+        m_dirty = true;
 
-		TilemapChunk* get_chunk(ChunkCoord coord);
-		const TilemapChunk* get_chunk(ChunkCoord coord) const;
-		void set_chunk(ChunkCoord coord, const TilemapChunk& source);
-		void set_chunk(ChunkCoord coord, TilemapChunk&& source) noexcept;
-		void erase_chunk(ChunkCoord coord);
-		std::size_t get_chunk_count() const { return m_data.size(); }
+        return *this;
+    }
 
-		const TileData* get_tile(GlobalTileCoord coord) const;
-		void set_tile(GlobalTileCoord coord, const TileData& source);
-		std::size_t get_tile_count() const;
+    const Data &get_data() const
+    {
+        return m_data;
+    }
 
-	private:
-		Data m_data;
-	};
+    std::size_t get_tile_count() const
+    {
+        return m_tileCount;
+    }
+    bool empty() const
+    {
+        return m_tileCount == 0;
+    }
+
+    bool get_dirty() const
+    {
+        return m_dirty;
+    }
+    void set_dirty(bool dirty)
+    {
+        m_dirty = dirty;
+    }
+
+    const TileData &get_tile(LocalTileCoord coord) const;
+    void set_tile(LocalTileCoord coord, const TileData &source);
+
+    void clear();
+
+  private: /* Fields */
+    Data m_data;
+    std::size_t m_tileCount = 0;
+    bool m_dirty = true;
+};
+
+class Tilemap
+{
+  public:
+    using Data = std::unordered_map<ChunkCoord, TilemapChunk>;
+
+    const Data &get_data() const
+    {
+        return m_data;
+    }
+
+    TilemapChunk &operator[](ChunkCoord coord)
+    {
+        return m_data[coord];
+    }
+
+    TilemapChunk *get_chunk(ChunkCoord coord);
+    const TilemapChunk *get_chunk(ChunkCoord coord) const;
+    void set_chunk(ChunkCoord coord, const TilemapChunk &source);
+    void set_chunk(ChunkCoord coord, TilemapChunk &&source) noexcept;
+    void erase_chunk(ChunkCoord coord);
+    std::size_t get_chunk_count() const
+    {
+        return m_data.size();
+    }
+
+    const TileData *get_tile(GlobalTileCoord coord) const;
+    void set_tile(GlobalTileCoord coord, const TileData &source);
+    std::size_t get_tile_count() const;
+
+  private:
+    Data m_data;
+};
 } // namespace rotm
 
 namespace std
 {
-	template <>
-	struct hash<rotm::GlobalTileCoord>
-	{
-		static std::size_t operator()(const rotm::GlobalTileCoord& coord) noexcept
-		{
-			std::size_t seed = 0;
+template <> struct hash<rotm::GlobalTileCoord>
+{
+    static std::size_t operator()(const rotm::GlobalTileCoord &coord) noexcept
+    {
+        std::size_t seed = 0;
 
-			hash_combine(seed, coord.chunk.x);
-			hash_combine(seed, coord.chunk.y);
-			hash_combine(seed, coord.tile.x);
-			hash_combine(seed, coord.tile.y);
+        hash_combine(seed, coord.chunk.x);
+        hash_combine(seed, coord.chunk.y);
+        hash_combine(seed, coord.tile.x);
+        hash_combine(seed, coord.tile.y);
 
-			return seed;
-		}
+        return seed;
+    }
 
-	private:
-		template <typename T>
-		static void hash_combine(std::size_t& seed, const T& value) noexcept
-		{
-			seed ^= std::hash<T>{}(value)
-				+ 0x9e3779b9
-				+ (seed << 6)
-				+ (seed >> 2);
-		}
-	};
-}
+  private:
+    template <typename T> static void hash_combine(std::size_t &seed, const T &value) noexcept
+    {
+        seed ^= std::hash<T>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+};
+} // namespace std

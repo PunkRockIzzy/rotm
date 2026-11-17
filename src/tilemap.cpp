@@ -1,102 +1,118 @@
 #include "tilemap.hpp"
+#include "tracy/Tracy.hpp"
 
 namespace rotm
 {
-	// yes i'm aware some of these can throw, it's intentional
-	
-	const TileData& TilemapChunk::get_tile(LocalTileCoord coord) const
-	{
-		return m_data.at(coord.y).at(coord.x);
-	}
+// yes i'm aware some of these can throw, it's intentional
 
-	void TilemapChunk::set_tile(LocalTileCoord coord, const TileData &source)
-	{
-		TileData& target = m_data.at(coord.y).at(coord.x);
+const TileData &TilemapChunk::get_tile(LocalTileCoord coord) const
+{
+    ZoneScopedN("TilemapChunk::get_tile");
 
-		if (target == source) return;
+    return m_data.at(coord.y).at(coord.x);
+}
 
-		m_dirty = true;
+void TilemapChunk::set_tile(LocalTileCoord coord, const TileData &source)
+{
+    TileData &target = m_data.at(coord.y).at(coord.x);
 
-		const bool sourceEmpty = source.id == TileData::ID_NULL;
-		const bool targetEmpty = target.id == TileData::ID_NULL;
+    if (target == source)
+        return;
 
-		if (sourceEmpty and !targetEmpty) --m_tileCount;
-		else if (!sourceEmpty and targetEmpty) ++m_tileCount;
+    m_dirty = true;
 
-		target = source;
-	}
+    const bool sourceEmpty = source.id == TileData::ID_NULL;
+    const bool targetEmpty = target.id == TileData::ID_NULL;
 
-	void TilemapChunk::clear()
-	{
-		for (auto& row : m_data)
-			row.fill(TileData{});
+    if (sourceEmpty and !targetEmpty)
+        --m_tileCount;
+    else if (!sourceEmpty and targetEmpty)
+        ++m_tileCount;
 
-		m_tileCount = 0;
-		m_dirty = true;
-	}
+    target = source;
+}
 
-	TilemapChunk* Tilemap::get_chunk(ChunkCoord coord)
-	{
-		const auto it = m_data.find(coord);
+void TilemapChunk::clear()
+{
+    for (auto &row : m_data)
+        row.fill(TileData{});
 
-		if (it == m_data.end()) return nullptr;
+    m_tileCount = 0;
+    m_dirty = true;
+}
 
-		return &it->second;
-	}
+TilemapChunk *Tilemap::get_chunk(ChunkCoord coord)
+{
+    ZoneScopedN("Tilemap::get_chunk")
 
-	const TilemapChunk* Tilemap::get_chunk(ChunkCoord coord) const
-	{
-		const auto it = m_data.find(coord);
+        const auto it = m_data.find(coord);
 
-		if (it == m_data.end()) return nullptr;
+    if (it == m_data.end())
+        return nullptr;
 
-		return &it->second;
-	}
+    return &it->second;
+}
 
-	void Tilemap::set_chunk(ChunkCoord coord, const TilemapChunk& source)
-	{
-		m_data[coord] = source;
-	}
+const TilemapChunk *Tilemap::get_chunk(ChunkCoord coord) const
+{
+    ZoneScopedN("Tilemap::get_chunk");
+    const auto it = m_data.find(coord);
 
-	void Tilemap::set_chunk(ChunkCoord coord, TilemapChunk&& source) noexcept
-	{
-		m_data[coord] = std::move(source);
-	}
+    if (it == m_data.end())
+        return nullptr;
 
-	void Tilemap::erase_chunk(ChunkCoord coord)
-	{
-		m_data.erase(coord);
-	}
+    return &it->second;
+}
 
-	const TileData* Tilemap::get_tile(GlobalTileCoord coord) const
-	{
-		const TilemapChunk* chunk = get_chunk(coord.chunk);
+void Tilemap::set_chunk(ChunkCoord coord, const TilemapChunk &source)
+{
+    m_data[coord] = source;
+}
 
-		if (!chunk) return nullptr;
+void Tilemap::set_chunk(ChunkCoord coord, TilemapChunk &&source) noexcept
+{
+    m_data[coord] = std::move(source);
+}
 
-		return &chunk->get_tile(coord.tile);
-	}
+void Tilemap::erase_chunk(ChunkCoord coord)
+{
+    m_data.erase(coord);
+}
 
-	void Tilemap::set_tile(GlobalTileCoord coord, const TileData &source)
-	{
-		TilemapChunk& chunk = m_data[coord.chunk];
+const TileData *Tilemap::get_tile(GlobalTileCoord coord) const
+{
+    ZoneScopedN("Tilemap::get_tile");
 
-		chunk.set_tile(coord.tile, source);
+    const TilemapChunk *chunk = get_chunk(coord.chunk);
 
-		if (chunk.get_tile_count() == 0)
-			m_data.erase(coord.chunk);
-	}
+    if (!chunk)
+        return nullptr;
 
-	std::size_t Tilemap::get_tile_count() const
-	{
-		std::size_t out = 0;
+    return &chunk->get_tile(coord.tile);
+}
 
-		for (const auto& [chunkCoord, chunk] : m_data)
-		{
-			(void)chunkCoord;
-			out += chunk.get_tile_count();
-		}
+void Tilemap::set_tile(GlobalTileCoord coord, const TileData &source)
+{
+    TilemapChunk &chunk = m_data[coord.chunk];
 
-		return out;
-	}
+    chunk.set_tile(coord.tile, source);
+
+    if (chunk.get_tile_count() == 0)
+        m_data.erase(coord.chunk);
+}
+
+std::size_t Tilemap::get_tile_count() const
+{
+    ZoneScopedN("Tilemap::get_tile_count");
+
+    std::size_t out = 0;
+
+    for (const auto &[chunkCoord, chunk] : m_data)
+    {
+        (void)chunkCoord;
+        out += chunk.get_tile_count();
+    }
+
+    return out;
+}
 } // namespace rotm

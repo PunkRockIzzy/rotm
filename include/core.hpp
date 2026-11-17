@@ -27,6 +27,9 @@ class Core
         int logLevel = 4; // LOG_WARNING
     };
 
+  public:
+    static constexpr int TICKS_PER_SECOND = 60;
+
   public: /* Methods */
     Core(int argc, char *argv[]);
     ~Core();
@@ -84,9 +87,8 @@ class Core
     }
 
   private: /* Static properties */
-    static constexpr int TICKS_PER_SECOND = 60;
     static constexpr double SECONDS_PER_TICK = 1.0 / static_cast<double>(TICKS_PER_SECOND);
-    static constexpr int MAX_TICKS_PER_FRAME = 60;
+    static constexpr int MAX_TICKS_PER_FRAME = 4;
 
   private: /* Methods */
     void update();

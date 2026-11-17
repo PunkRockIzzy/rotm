@@ -9,6 +9,7 @@
 #include "serialize_tileset.hpp"
 #include "tile_math.hpp"
 #include "tilemap.hpp"
+
 #include "utility.hpp"
 #include "vec2i.hpp"
 #include "version.hpp"
@@ -28,14 +29,16 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include <imgui.h>
-#include <vector>
-#define MINI_CASE_SENSITIVE
 #include <imgui_stdlib.h>
-#include <ini.h>
 #include <raylib.h>
 #include <rlImGui.h>
+#include <tracy/Tracy.hpp>
+
+#define MINI_CASE_SENSITIVE
+#include <ini.h>
 
 namespace rotm
 {
@@ -76,6 +79,8 @@ Editor::~Editor()
 
 void Editor::update()
 {
+    ZoneScopedN("Editor::update");
+
     if (WindowShouldClose())
     {
         m_wantExit = true;
@@ -117,6 +122,8 @@ void Editor::draw()
 
 void Editor::sync_gui()
 {
+    ZoneScopedN("Editor::sync_gui");
+
     // disable window resize grips
     ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0);
     ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0);

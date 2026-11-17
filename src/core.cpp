@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <raylib.h>
+#include <tracy/Tracy.hpp>
 
 namespace rotm
 {
@@ -101,6 +102,8 @@ void Core::run()
             draw();
 
             ++m_frameCountPastSecond;
+
+            FrameMark;
         }
     }
     catch (const std::exception &)
@@ -111,11 +114,15 @@ void Core::run()
 
 void Core::update()
 {
+    ZoneScopedN("Core::update");
+
     m_moduleActive->update();
 }
 
 void Core::tick()
 {
+    ZoneScopedN("Core::tick");
+
     const bool oncePerSecond = (m_tickCount > 0) and (m_tickCount % TICKS_PER_SECOND == 0);
 
     m_moduleActive->tick();
@@ -145,6 +152,8 @@ void Core::tick()
 
 void Core::draw()
 {
+    ZoneScopedN("Core::draw");
+
     BeginDrawing();
     ClearBackground(BLACK);
 
