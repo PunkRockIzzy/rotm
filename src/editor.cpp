@@ -6,7 +6,6 @@
 #include "renderer_tilemap.hpp"
 #include "scene.hpp"
 #include "serialize_scene.hpp"
-#include "serialize_tilemap.hpp"
 #include "serialize_tileset.hpp"
 #include "tile_math.hpp"
 #include "tilemap.hpp"
@@ -15,10 +14,8 @@
 #include "version.hpp"
 
 #include <algorithm>
-// #include <complex>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <deque>
 #include <expected>
 #include <filesystem>
