@@ -115,4 +115,26 @@ std::size_t Tilemap::get_tile_count() const
 
     return out;
 }
+
+void Tilemap::stress_test()
+{
+    static constexpr int MONOLITH_START = -499;
+    static constexpr int MONOLITH_END = 500;
+
+    for (int chunkY = MONOLITH_START; chunkY <= MONOLITH_END; ++chunkY)
+    {
+        for (int chunkX = MONOLITH_START; chunkX <= MONOLITH_END; ++chunkX)
+        {
+            TilemapChunk &chunk = m_data[{chunkX, chunkY}];
+
+            for (int tileY = 0; tileY < static_cast<int>(TilemapChunk::SIZE); ++tileY)
+            {
+                for (int tileX = 0; tileX < static_cast<int>(TilemapChunk::SIZE); ++tileX)
+                {
+                    chunk.set_tile({tileX, tileY}, {.id = 0});
+                }
+            }
+        }
+    }
+}
 } // namespace rotm

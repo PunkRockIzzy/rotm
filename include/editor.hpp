@@ -78,6 +78,10 @@ class Editor final : public CoreModule
     void end_load_scene();
     bool is_load_in_progress() const;
 
+    void begin_init_stress_test();
+    void end_init_stress_test();
+    bool is_init_stress_test_in_progress();
+
     void save_scene();
     // bool load_scene();
 
@@ -89,8 +93,6 @@ class Editor final : public CoreModule
     void tool_eraser(const GlobalTileCoord &coord);
 
     void record_tile_edit(const GlobalTileCoord &position, const TileData &previous, const TileData &replacement);
-
-    void stress_test();
 
     void undo();
     void redo();
@@ -129,6 +131,8 @@ class Editor final : public CoreModule
     void popup_open_scene();
 
     void popup_save_scene();
+
+    void popup_init_stress_test();
 
   private: /* Fields */
     // Reference to core.logger
@@ -214,6 +218,8 @@ class Editor final : public CoreModule
     std::future<std::expected<SceneFileData, std::string>> m_loadJob;
     std::future<std::optional<std::string>> m_saveJob;
 
+    std::future<Tilemap> m_stressTestJob;
+
     // GUI
     bool m_draggingCamera = false;
 
@@ -226,6 +232,7 @@ class Editor final : public CoreModule
     bool m_openEnterTilesetName = false;
     bool m_openConfigureTileSize = false;
     bool m_openConfigureUsableTiles = false;
+    bool m_openInitStressTest = false;
 
     bool m_openLoadScene = false;
     std::string m_sceneLoadErr;

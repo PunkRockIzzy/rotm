@@ -90,15 +90,10 @@ void Editor::update()
     if (m_saveJob.valid() && !is_save_in_progress())
         end_save_scene();
 
-    cfg_update();
+    if (m_stressTestJob.valid() and !is_init_stress_test_in_progress())
+        end_init_stress_test();
 
-    if (IsKeyPressed(KEY_GRAVE))
-    {
-        if (IsKeyDown(KEY_LEFT_SHIFT) and core.is_dev_mode())
-            stress_test();
-        else
-            m_windowLog.active = !m_windowLog.active;
-    }
+    cfg_update();
 
     handle_shortcuts();
 
@@ -214,6 +209,9 @@ void ini_read_int(Logger &logger, const mINI::INIStructure &ini, const std::stri
     }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+
 bool Editor::ini_load()
 {
     logger.print_info()("Loading INI config...");
@@ -238,6 +236,8 @@ bool Editor::ini_load()
 
     return true;
 }
+
+#pragma GCC diagnostic pop
 
 void Editor::ini_save()
 {
@@ -381,6 +381,35 @@ bool Editor::is_load_in_progress() const
     return m_loadJob.valid() and m_loadJob.wait_for(0s) != std::future_status::ready;
 }
 
+void Editor::begin_init_stress_test()
+{
+    if (is_init_stress_test_in_progress())
+    {
+        logger.print_warning()("Cannot initialize stress test; already in progress.");
+        return;
+    }
+
+    logger.print_info()("Initializing stress test...");
+
+    m_stressTestJob = std::async(std::launch::async, []() -> Tilemap {
+        Tilemap out;
+        out.stress_test();
+        return out;
+    });
+}
+
+void Editor::end_init_stress_test()
+{
+    m_scene->tilemap = m_stressTestJob.get();
+}
+
+bool Editor::is_init_stress_test_in_progress()
+{
+    using namespace std::chrono_literals;
+
+    return m_stressTestJob.valid() and m_stressTestJob.wait_for(0s) != std::future_status::ready;
+}
+
 void Editor::save_scene()
 {
     if (!m_scene)
@@ -410,60 +439,78 @@ bool Editor::load_tileset_atlas()
 
 void Editor::handle_shortcuts()
 {
-    int keyPressed = GetKeyPressed();
+    const bool ctrl = IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL);
+    const bool shift = IsKeyDown(KEY_LEFT_SHIFT) or IsKeyDown(KEY_RIGHT_SHIFT);
 
-    if (IsKeyPressed(KEY_F3))
+    while (int keyPressed = GetKeyPressed())
     {
-        m_windowStats.active = !m_windowStats.active;
-    }
+        if (keyPressed >= KEY_ZERO and keyPressed <= KEY_NINE)
+        {
+            using enum EditTool;
+            const int number = keyPressed - KEY_ZERO;
 
-    if (keyPressed >= KEY_ZERO and keyPressed <= KEY_NINE)
-    {
-        using enum EditTool;
+            switch (static_cast<EditTool>(number))
+            {
+            case Pencil:
+                m_editTool = Pencil;
+                break;
 
-        const int number = keyPressed - 48;
+            case Eraser:
+                m_editTool = Eraser;
+                break;
 
-        switch (static_cast<EditTool>(number))
+            default:
+                break;
+            }
+        }
+        else if (ctrl)
         {
-        case Pencil:
-            m_editTool = Pencil;
-            break;
+            switch (keyPressed)
+            {
+            case KEY_NULL:
+            default:
+                break;
 
-        case Eraser:
-            m_editTool = Eraser;
-            break;
+            case KEY_N:
+                m_openEnterTilesetName = true;
+                break;
 
-        default:
-            break;
-        }
-    }
+            case KEY_O:
+                m_openLoadScene = true;
+                break;
 
-    if (IsKeyDown(KEY_LEFT_CONTROL) or IsKeyDown(KEY_RIGHT_CONTROL))
-    {
-        if (IsKeyPressed(KEY_N))
-        {
-            m_openEnterTilesetName = true;
+            case KEY_S:
+                m_openSaveScene = true;
+                break;
+
+            case KEY_W:
+                destroy_scene();
+                break;
+
+            case KEY_Y:
+                redo();
+                break;
+
+            case KEY_Z:
+                undo();
+                break;
+            }
         }
-        else if (IsKeyPressed(KEY_W))
+        else if (shift)
         {
-            destroy_scene();
+            switch (keyPressed)
+            {
+            case KEY_NULL:
+            default:
+                break;
+
+            case KEY_GRAVE:
+                begin_init_stress_test();
+                break;
+            }
         }
-        else if (IsKeyPressed(KEY_S))
-        {
-            m_openSaveScene = true;
-        }
-        else if (IsKeyPressed(KEY_O))
-        {
-            m_openLoadScene = true;
-        }
-        else if (IsKeyPressed(KEY_Z))
-        {
-            undo();
-        }
-        else if (IsKeyPressed(KEY_Y))
-        {
-            redo();
-        }
+
+        keyPressed = GetKeyPressed();
     }
 }
 
@@ -540,31 +587,6 @@ void Editor::record_tile_edit(const GlobalTileCoord &position, const TileData &p
     m_currentCommand->edits.emplace_back(position, previous, replacement);
 
     m_currentEditIndices.emplace(position, idx);
-}
-
-void Editor::stress_test()
-{
-    static constexpr int MONOLITH_START = -499;
-    static constexpr int MONOLITH_END = 500;
-
-    if (!m_scene)
-        return;
-
-    for (int chunkY = MONOLITH_START; chunkY <= MONOLITH_END; ++chunkY)
-    {
-        for (int chunkX = MONOLITH_START; chunkX <= MONOLITH_END; ++chunkX)
-        {
-            TilemapChunk &chunk = m_scene->tilemap[{chunkX, chunkY}];
-
-            for (int tileY = 0; tileY < static_cast<int>(TilemapChunk::SIZE); ++tileY)
-            {
-                for (int tileX = 0; tileX < static_cast<int>(TilemapChunk::SIZE); ++tileX)
-                {
-                    chunk.set_tile({tileX, tileY}, m_windowSceneEditor.tileToPlace);
-                }
-            }
-        }
-    }
 }
 
 void Editor::undo()
@@ -872,7 +894,7 @@ void Editor::window_scene_editor()
                      {static_cast<float>(m_sceneView.texture.width), static_cast<float>(m_sceneView.texture.height)},
                      {0.0f, 1.0f}, {1.0f, 0.0f});
 
-        m_sceneEditEnabled = ImGui::IsItemHovered() and !is_save_in_progress();
+        m_sceneEditEnabled = ImGui::IsItemHovered() and !is_save_in_progress() and !is_init_stress_test_in_progress();
 
         const ImVec2 availSize = ImGui::GetContentRegionAvail();
         const ImVec2 paletteSize = {availSize.x * 0.5f, availSize.y};
@@ -1730,6 +1752,28 @@ void Editor::popup_save_scene()
 
         ImGui::EndPopup();
     }
+
+    ImGui::EndPopup();
+}
+
+void Editor::popup_init_stress_test()
+{
+    if (m_openInitStressTest)
+    {
+        ImGui::OpenPopup("Initializing stress test");
+        m_openInitStressTest = false;
+    }
+
+    const bool active = ImGui::BeginPopupModal("Initializing stress test", nullptr,
+                                               ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+    if (!active)
+        return;
+
+    ImGui::TextUnformatted("Beginning stress test...");
+
+    if (!is_init_stress_test_in_progress())
+        ImGui::CloseCurrentPopup();
 
     ImGui::EndPopup();
 }
