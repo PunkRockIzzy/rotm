@@ -785,9 +785,9 @@ void Editor::main_menu_bar()
     {
         const bool clickedStats = ImGui::MenuItem("Stats", "F3", m_windowStats.active);
 
-        const bool clickedShowChunkBorders = ImGui::MenuItem(
-            "Show chunk borders", "F4", (m_scene ? m_scene->render.tilemap.get_show_chunk_borders() : false),
-            static_cast<bool>(m_scene));
+        const bool clickedShowChunkBorders =
+            ImGui::MenuItem("Show chunk borders", "F4", (m_scene ? m_scene->render.tilemap.showChunkBorders : false),
+                            static_cast<bool>(m_scene));
 
         if (clickedStats)
         {
@@ -798,7 +798,7 @@ void Editor::main_menu_bar()
         {
             TilemapRenderer &renderer = m_scene->render.tilemap;
 
-            renderer.set_show_chunk_borders(!renderer.get_show_chunk_borders());
+            renderer.showChunkBorders = !renderer.showChunkBorders;
         }
 
         ImGui::EndMenu();

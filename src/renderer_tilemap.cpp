@@ -52,7 +52,7 @@ void TilemapRenderer::draw(int tileSize)
         it->second.timeLastSeen = time::Clock::now();
         ++m_chunksDrawnCount;
 
-        if (m_showChunkBorders)
+        if (showChunkBorders)
         {
             const float chunkSizePixels = static_cast<float>(tileSize) * static_cast<float>(TilemapChunk::SIZE);
 

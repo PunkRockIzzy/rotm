@@ -12,87 +12,69 @@
 
 namespace rotm
 {
-	class TilemapRenderer
-	{
-	public:
-		TilemapRenderer() = default;
-	
-		TilemapRenderer(const TilemapRenderer&) = delete;
-		TilemapRenderer& operator=(const TilemapRenderer&) = delete;
-		
-		TilemapRenderer(TilemapRenderer&&) noexcept = default;
-		TilemapRenderer& operator=(TilemapRenderer&&) noexcept = default;
-	
-		void update(
-			const Tileset& tileset,
-			Tilemap& tilemap,
-			const Camera2D& camera
-		);
-		
-		void draw(int tileSize);
+class TilemapRenderer
+{
+  public:
+    TilemapRenderer() = default;
 
-		static void draw_tile(
-			const Tileset& tileset,
-			GlobalTileCoord coord,
-			const TileData& tile,
-			Color tint = WHITE
-		);
+    TilemapRenderer(const TilemapRenderer &) = delete;
+    TilemapRenderer &operator=(const TilemapRenderer &) = delete;
 
-		std::size_t get_chunks_drawn_count() const
-		{
-			return m_chunksDrawnCount;
-		}
+    TilemapRenderer(TilemapRenderer &&) noexcept = default;
+    TilemapRenderer &operator=(TilemapRenderer &&) noexcept = default;
 
-		std::size_t get_visible_chunk_count() const
-		{
-			return m_visibleChunks.size();
-		}
+    void update(const Tileset &tileset, Tilemap &tilemap, const Camera2D &camera);
 
-		bool get_show_chunk_borders() const
-		{
-			return m_showChunkBorders;
-		}
-		
-		void set_show_chunk_borders(bool showChunkBorders)
-		{
-			m_showChunkBorders = showChunkBorders;
-		}
+    void draw(int tileSize);
 
-	private:
-		static constexpr std::size_t CHUNK_CACHE_MAX_SIZE = 128;
-		
-		struct CachedChunk
-		{
-			RenderTexture renderTexture;
-			time::Point timeCreated = time::Clock::now();
-			time::Point timeLastSeen = timeCreated;
+    static void draw_tile(const Tileset &tileset, GlobalTileCoord coord, const TileData &tile, Color tint = WHITE);
 
-			CachedChunk(int tileSize);
-			~CachedChunk();
+    std::size_t get_chunks_drawn_count() const
+    {
+        return m_chunksDrawnCount;
+    }
 
-			CachedChunk() = delete;
+    std::size_t get_visible_chunk_count() const
+    {
+        return m_visibleChunks.size();
+    }
 
-			CachedChunk(const CachedChunk&) = delete;
-			CachedChunk& operator=(const CachedChunk&) = delete;
-			
-			CachedChunk(CachedChunk&&) = default;
-			CachedChunk& operator=(CachedChunk&&) = default;
-			
-			void render(const Tileset& tileset, TilemapChunk& chunk);
-		};
+  public:
+    bool showChunkBorders = false;
 
-		void calculate_visible_chunks(int tileSize, const Camera2D& camera);
-		void build_render_list(const Tilemap& tilemap);
-		void discard_old_chunks();
+  private:
+    static constexpr std::size_t CHUNK_CACHE_MAX_SIZE = 128;
 
-		void draw_chunk(const ChunkCoord& chunkCoord, const CachedChunk& chunk, int tileSize);
+    struct CachedChunk
+    {
+        RenderTexture renderTexture;
+        time::Point timeCreated = time::Clock::now();
+        time::Point timeLastSeen = timeCreated;
 
-		std::unordered_map<ChunkCoord, CachedChunk> m_chunkCache;
-		std::vector<ChunkCoord> m_visibleChunks;
-		std::vector<ChunkCoord> m_renderList;
+        CachedChunk(int tileSize);
+        ~CachedChunk();
 
-		std::size_t m_chunksDrawnCount = 0;
-	
-		bool m_showChunkBorders = false;
-	};
+        CachedChunk() = delete;
+
+        CachedChunk(const CachedChunk &) = delete;
+        CachedChunk &operator=(const CachedChunk &) = delete;
+
+        CachedChunk(CachedChunk &&) = default;
+        CachedChunk &operator=(CachedChunk &&) = default;
+
+        void render(const Tileset &tileset, TilemapChunk &chunk);
+    };
+
+    void calculate_visible_chunks(int tileSize, const Camera2D &camera);
+    void build_render_list(const Tilemap &tilemap);
+    void discard_old_chunks();
+
+    void draw_chunk(const ChunkCoord &chunkCoord, const CachedChunk &chunk, int tileSize);
+
+    std::unordered_map<ChunkCoord, CachedChunk> m_chunkCache;
+    std::vector<ChunkCoord> m_visibleChunks;
+    std::vector<ChunkCoord> m_renderList;
+
+    std::size_t m_chunksDrawnCount = 0;
+};
 } // namespace rotm
