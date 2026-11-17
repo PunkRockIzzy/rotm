@@ -2,14 +2,14 @@ A **2D tile-based game engine** specifically designed for the game **Rage of the
 
 Features
 --------
-    - Graphical tilemap editor
-    - Chunk based tilemaps, fast binary save format
-    - Arbitrary tileset support, configurable size and valid/usable tiles, serialized configuration
-    - Flexible state machine handling (CoreModule)
-    - Automatic reference-counted resource management (currently limited to textures)
-    - Rich logging API: tracks function names, timestamps
-    - Versatile Dear ImGui integration (CoreModule::sync_gui)
-    - ...and more...
+  - Graphical tilemap editor
+  - Chunk based tilemaps, fast binary save format
+  - Arbitrary tileset support, configurable size and valid/usable tiles, serialized configuration
+  - Flexible state machine handling (CoreModule)
+  - Automatic reference-counted resource management (currently limited to textures)
+  - Rich logging API: tracks function names, timestamps
+  - Versatile Dear ImGui integration (CoreModule::sync_gui)
+  - ...and more...
 
 Compilation
 -----------
