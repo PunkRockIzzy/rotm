@@ -20,6 +20,7 @@
 
 #include <imgui.h>
 #include <raylib.h>
+#include <vector>
 
 namespace rotm
 {
@@ -130,6 +131,7 @@ class Editor final : public CoreModule
     void popup_configure_tileset();
 
     void popup_open_scene();
+    void popup_open_scene_table();
 
     void popup_save_scene();
 
@@ -237,6 +239,7 @@ class Editor final : public CoreModule
     bool m_openInitStressTest = false;
 
     bool m_openLoadScene = false;
+    std::vector<std::filesystem::path> m_loadableScenes;
     std::string m_sceneLoadErr;
 
     bool m_openSaveScene = false;

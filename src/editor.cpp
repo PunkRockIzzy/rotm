@@ -1690,6 +1690,8 @@ void Editor::popup_open_scene()
             m_sceneNameInput = m_sceneName;
             ImGui::CloseCurrentPopup();
         }
+
+        popup_open_scene_table();
     }
 
     const bool errorActive =
@@ -1709,6 +1711,54 @@ void Editor::popup_open_scene()
     }
 
     ImGui::EndPopup();
+}
+
+void Editor::popup_open_scene_table()
+{
+    namespace fs = std::filesystem;
+
+    const bool show = ImGui::BeginTable("##loadable-scenes", 1, ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY);
+
+    if (show)
+    {
+        if (m_loadableScenes.empty())
+        {
+            const fs::directory_iterator sceneRoot{SCENE_ROOT};
+
+            for (const fs::path &sceneFolder : sceneRoot)
+            {
+                if (!fs::is_directory(sceneFolder))
+                    continue;
+
+                if (!fs::is_regular_file(sceneFolder / "tilemap.rtm"))
+                    continue;
+
+                m_loadableScenes.push_back(sceneFolder);
+            }
+        }
+        else
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::TextUnformatted("Available scenes:");
+
+            for (const fs::path &scene : m_loadableScenes)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0);
+                ImGui::TextUnformatted(scene.string().c_str());
+
+                if (ImGui::IsItemHovered() and IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                {
+                    m_sceneNameInput = scene.stem().string();
+                    m_sceneName = m_sceneNameInput;
+                    begin_load_scene();
+                }
+            }
+        }
+
+        ImGui::EndTable();
+    }
 }
 
 void Editor::popup_save_scene()
