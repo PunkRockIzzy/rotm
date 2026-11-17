@@ -43,9 +43,9 @@ void TilemapChunk::clear()
 
 TilemapChunk *Tilemap::get_chunk(ChunkCoord coord)
 {
-    ZoneScopedN("Tilemap::get_chunk")
+    ZoneScopedN("Tilemap::get_chunk");
 
-        const auto it = m_data.find(coord);
+    const auto it = m_data.find(coord);
 
     if (it == m_data.end())
         return nullptr;
