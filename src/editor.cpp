@@ -636,7 +636,7 @@ void Editor::draw_tile_cursor()
     const Vector2 mouseTilePos = tile_to_point(m_windowSceneEditor.mouseTile, tileSize);
     const Rectangle rec = {mouseTilePos.x, mouseTilePos.y, static_cast<float>(tileSize), static_cast<float>(tileSize)};
 
-    DrawRectangleLinesEx(rec, 1.0f, Fade(WHITE, sinNormalized));
+    DrawRectangleLinesEx(rec, 2.0f, Fade(WHITE, sinNormalized));
 }
 
 void Editor::draw_edit_preview()
@@ -1172,6 +1172,7 @@ void Editor::child_scene_editor_tooloptions(const ImVec2 &size)
 
 void Editor::child_scene_editor_tooloptions_brusheditor()
 {
+    ImGui::TextUnformatted("THIS SHIT DON'T WORK!!!!");
 }
 
 void Editor::window_stats()

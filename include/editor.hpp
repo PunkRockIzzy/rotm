@@ -53,7 +53,7 @@ class Editor final : public CoreModule
     static constexpr int TILE_SIZE_INPUT_DEFAULT = 2;
     static constexpr int TILE_SIZE_FACTOR = 8;
 
-    static constexpr double TILE_CURSOR_ANIM_SPEED = 5.0;
+    static constexpr double TILE_CURSOR_ANIM_SPEED = 10.0;
 
     static constexpr int PENCIL_SIZE_MAX = TilemapChunk::SIZE;
     static constexpr int ERASER_SIZE_MAX = TilemapChunk::SIZE;

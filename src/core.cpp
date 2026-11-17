@@ -117,6 +117,13 @@ void Core::update()
     ZoneScopedN("Core::update");
 
     m_moduleActive->update();
+
+    if (IsKeyPressed(KEY_F12))
+    {
+        const std::string screenshotFileName = generate_screenshot_filename();
+
+        TakeScreenshot(screenshotFileName.c_str());
+    }
 }
 
 void Core::tick()
@@ -335,5 +342,12 @@ void Core::handle_exception_shutdown()
 double Core::calculate_delta_time()
 {
     return std::chrono::duration<double>(time::since(m_timeLastFrame)).count();
+}
+
+std::string Core::generate_screenshot_filename()
+{
+    const auto now = std::chrono::system_clock::now();
+
+    return std::format("{:%Y-%m-%d_%H-%M-%S}.png", now);
 }
 } // namespace rotm

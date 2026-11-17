@@ -23,7 +23,7 @@ class Core
         unsigned windowFlags = 0x00000004; // FLAG_WINDOW_RESIZABLE
         int windowWidth = 1280;
         int windowHeight = 720;
-        int targetFPS = 60;
+        int targetFPS = 120;
         int logLevel = 4; // LOG_WARNING
     };
 
@@ -106,6 +106,8 @@ class Core
     void handle_exception_shutdown();
 
     double calculate_delta_time();
+
+    std::string generate_screenshot_filename();
 
   private: /* Fields */
     const time::Point m_timeStart = time::Clock::now();
