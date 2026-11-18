@@ -38,7 +38,7 @@
 #include <tracy/Tracy.hpp>
 
 #define MINI_CASE_SENSITIVE
-#include <mini/ini.h>
+#include <ini.h>
 
 namespace rotm
 {

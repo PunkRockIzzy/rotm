@@ -43,7 +43,7 @@ CXXFLAGS := -Wall -Wextra -Wpedantic -std=gnu++26 -MMD \
 -I$(RLIMGUI_SRCDIR) \
 -I$(TRACY_SRCDIR) \
 -Iexternal/imgui/misc/cpp \
--Iexternal/mINI/src
+-Iexternal/mINI/include
 
 EXE := .exe
 
