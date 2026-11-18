@@ -4,7 +4,6 @@
 #include "tilemap.hpp"
 #include "utility.hpp"
 
-
 namespace rotm
 {
 Tileset::Tileset(std::shared_ptr<TextureResource> &&atlasTexture, const TilesetMetadata &metadata)

@@ -14,206 +14,178 @@
 
 namespace rotm
 {
-	class Logger
-	{
-	public: /* Types */
-		enum class Level : unsigned short
-		{
-			All = 0u,
-			Debug,
-			Info,
-			Warning,
-			Error,
-			None,
-			Count
-		};
+class Logger
+{
+  public: /* Types */
+    enum class Level : unsigned short
+    {
+        All = 0u,
+        Debug,
+        Info,
+        Warning,
+        Error,
+        None,
+        Count
+    };
 
-		struct LogProxy
-		{
-			Logger& logger;
-			Level level;
-			std::source_location location;
+    struct LogProxy
+    {
+        Logger &logger;
+        Level level;
+        std::source_location location;
 
-			template <typename... Args>
-			void operator()(std::format_string<Args...> message, Args&&... args) const
-			{
-				logger.print_impl(
-					level, location, message, std::forward<Args>(args)...
-				);
-			}
-		};
+        template <typename... Args> void operator()(std::format_string<Args...> message, Args &&...args) const
+        {
+            logger.print_impl(level, location, message, std::forward<Args>(args)...);
+        }
+    };
 
-		struct MsgData
-		{
-			std::string text;
-			std::chrono::hh_mm_ss<std::chrono::milliseconds> time;
-			std::source_location location;
-			Level level;
-		};
+    struct MsgData
+    {
+        std::string text;
+        std::chrono::hh_mm_ss<std::chrono::milliseconds> time;
+        std::source_location location;
+        Level level;
+    };
 
-	public: /* Methods */
-		Logger(const time::Point& timeStart) :
-			m_timeStart(timeStart)
-		{}
+  public: /* Methods */
+    Logger(const time::Point &timeStart) : m_timeStart(timeStart)
+    {
+    }
 
-		Logger() = delete;
-		Logger(const Logger&) = delete;
-		Logger(Logger&&) = delete;
-		Logger& operator=(const Logger&) = delete;
-		Logger& operator=(Logger&&) = delete;
+    Logger() = delete;
+    Logger(const Logger &) = delete;
+    Logger(Logger &&) = delete;
+    Logger &operator=(const Logger &) = delete;
+    Logger &operator=(Logger &&) = delete;
 
-		const std::deque<MsgData>& get_history() const
-		{
-			return m_msgHistory;
-		}
+    const std::deque<MsgData> &get_history() const
+    {
+        return m_msgHistory;
+    }
 
-		void set_level(Level level)
-		{
-			m_level = level;
-		}
+    void set_level(Level level)
+    {
+        m_level = level;
+    }
 
-		LogProxy print_debug(std::source_location loc = std::source_location::current())
-		{
-			return {*this, Level::Debug, loc};
-		}
+    LogProxy print_debug(std::source_location loc = std::source_location::current())
+    {
+        return {*this, Level::Debug, loc};
+    }
 
-		LogProxy print_info(std::source_location loc = std::source_location::current())
-		{
-			return {*this, Level::Info, loc};
-		}
+    LogProxy print_info(std::source_location loc = std::source_location::current())
+    {
+        return {*this, Level::Info, loc};
+    }
 
-		LogProxy print_warning(std::source_location loc = std::source_location::current())
-		{
-			return {*this, Level::Warning, loc};
-		}
+    LogProxy print_warning(std::source_location loc = std::source_location::current())
+    {
+        return {*this, Level::Warning, loc};
+    }
 
-		LogProxy print_error(std::source_location loc = std::source_location::current())
-		{
-			return {*this, Level::Error, loc};
-		}
+    LogProxy print_error(std::source_location loc = std::source_location::current())
+    {
+        return {*this, Level::Error, loc};
+    }
 
-		static std::string_view level_to_string(Level level)
-		{
-			static_assert(std::to_underlying(Level::Count) == 6);
-			
-			switch (level)
-			{
-			case Level::All:
-				return "All";
+    static std::string_view level_to_string(Level level)
+    {
+        static_assert(std::to_underlying(Level::Count) == 6);
 
-			case Level::Debug:
-				return "Debug";
+        switch (level)
+        {
+        case Level::All:
+            return "All";
 
-			case Level::Info:
-				return "Info";
+        case Level::Debug:
+            return "Debug";
 
-			case Level::Warning:
-				return "Warning";
+        case Level::Info:
+            return "Info";
 
-			case Level::Error:
-				return "Error";
+        case Level::Warning:
+            return "Warning";
 
-			case Level::None:
-				return "None";
+        case Level::Error:
+            return "Error";
 
-			case Level::Count:
-				return "Count";
+        case Level::None:
+            return "None";
 
-			default:
-				return "Unknown";
-			};
-		}
+        case Level::Count:
+            return "Count";
 
-	private: /* Methods */
-		template <typename... Args>
-		void print_impl(
-			Level level, std::source_location location,
-			std::format_string<Args...> message, Args&&... args)
-		{
-			namespace chrono = std::chrono;
+        default:
+            return "Unknown";
+        };
+    }
 
-			static constexpr std::string_view colorReset = "\x1b[0m";
-			static constexpr std::string_view colorPurple = "\x1b[0;1;35m";
-			static constexpr std::string_view colorCyan = "\x1b[0;1;36m";
-			static constexpr std::string_view colorYellow = "\x1b[0;1;33m";
-			static constexpr std::string_view colorRed = "\x1b[0;1;31m";
-			static constexpr std::string_view colorGray = "\x1b[0;1;30m";
+  private: /* Methods */
+    template <typename... Args>
+    void print_impl(Level level, std::source_location location, std::format_string<Args...> message, Args &&...args)
+    {
+        namespace chrono = std::chrono;
 
-			const time::Point timeNow = chrono::steady_clock::now();
-			const chrono::hh_mm_ss<chrono::milliseconds> timeDisplay{
-				chrono::duration_cast<chrono::milliseconds>(
-					timeNow - m_timeStart)};
+        static constexpr std::string_view colorReset = "\x1b[0m";
+        static constexpr std::string_view colorPurple = "\x1b[0;1;35m";
+        static constexpr std::string_view colorCyan = "\x1b[0;1;36m";
+        static constexpr std::string_view colorYellow = "\x1b[0;1;33m";
+        static constexpr std::string_view colorRed = "\x1b[0;1;31m";
+        static constexpr std::string_view colorGray = "\x1b[0;1;30m";
 
-			const MsgData& msg = m_msgHistory.emplace_front(
-				std::format(message, std::forward<Args>(args)...),
-				timeDisplay,
-				location,
-				level
-			);
+        const time::Point timeNow = chrono::steady_clock::now();
+        const chrono::hh_mm_ss<chrono::milliseconds> timeDisplay{
+            chrono::duration_cast<chrono::milliseconds>(timeNow - m_timeStart)};
 
-			if (m_msgHistory.size() > HISTORY_MAX) m_msgHistory.pop_back();
+        const MsgData &msg =
+            m_msgHistory.emplace_front(std::format(message, std::forward<Args>(args)...), timeDisplay, location, level);
 
-			if (m_level > level) return;
+        if (m_msgHistory.size() > HISTORY_MAX)
+            m_msgHistory.pop_back();
 
-			std::string_view funcName =
-				clean_function_name(location.function_name());
+        if (m_level > level)
+            return;
 
-			std::string_view colorText;
+        std::string_view funcName = clean_function_name(location.function_name());
 
-			switch (level)
-			{
-			case Level::Debug:
-				colorText = colorPurple;
-				break;
+        std::string_view colorText;
 
-			case Level::Info:
-			default:
-				colorText = colorCyan;
-				break;
+        switch (level)
+        {
+        case Level::Debug:
+            colorText = colorPurple;
+            break;
 
-			case Level::Warning:
-				colorText = colorYellow;
-				break;
+        case Level::Info:
+        default:
+            colorText = colorCyan;
+            break;
 
-			case Level::Error:
-				colorText = colorRed;
-				break;
-			};
+        case Level::Warning:
+            colorText = colorYellow;
+            break;
 
-			const std::string levelLabel = std::format(
-				"[{}]",
-				level_to_string(level)
-			);
+        case Level::Error:
+            colorText = colorRed;
+            break;
+        };
 
-			const std::string levelText = std::format(
-				"{:>10}",
-				levelLabel
-			);
+        const std::string levelLabel = std::format("[{}]", level_to_string(level));
 
-			std::println(
-				"{}{}{} {}{}{} {:80} {}@ {} ({}:{}){}",
-				colorGray,
-				msg.time,
-				colorReset,
-				colorText,
-				levelText,
-				colorReset,
-				msg.text,
-				colorGray,
-				funcName,
-				location.file_name(),
-				location.line(),
-				colorReset
-			);
-		}
+        const std::string levelText = std::format("{:>10}", levelLabel);
 
-	private: /* Fields */
-		static constexpr std::size_t HISTORY_MAX = 5000;
+        std::println("{}{}{} {}{}{} {:80} {}@ {} ({}:{}){}", colorGray, msg.time, colorReset, colorText, levelText,
+                     colorReset, msg.text, colorGray, funcName, location.file_name(), location.line(), colorReset);
+    }
 
-		const time::Point& m_timeStart;
+  private: /* Fields */
+    static constexpr std::size_t HISTORY_MAX = 5000;
 
-		std::deque<MsgData> m_msgHistory;
+    const time::Point &m_timeStart;
 
-		Level m_level = Level::Info;
-	};
+    std::deque<MsgData> m_msgHistory;
+
+    Level m_level = Level::Info;
+};
 } // namespace rotm

@@ -4,38 +4,41 @@
 
 namespace rotm
 {
-	class Core;
-	class Logger;
-	
-	class GuiContext
-	{
-	public:	/* Fonts */
-		struct Fonts
-		{
-			ImFont* regular = nullptr;
-			ImFont* regularSmall = nullptr;
-			ImFont* monospace = nullptr;
-			ImFont* monospaceSmall = nullptr;
-		};
-	
-	public: /* Methods */
-		GuiContext(Core& coreRef);
-		~GuiContext();
+class Core;
+class Logger;
 
-		void begin_frame();
-		void end_frame();
+class GuiContext
+{
+  public: /* Fonts */
+    struct Fonts
+    {
+        ImFont *regular = nullptr;
+        ImFont *regularSmall = nullptr;
+        ImFont *monospace = nullptr;
+        ImFont *monospaceSmall = nullptr;
+    };
 
-		const Fonts& get_fonts() const { return m_fonts; }
+  public: /* Methods */
+    GuiContext(Core &coreRef);
+    ~GuiContext();
 
-	private: /* Static properties */
-		static constexpr bool USE_DARK_THEME = true;
+    void begin_frame();
+    void end_frame();
 
-	private: /* Fields */
-		Core& core;
-		Logger& logger;
+    const Fonts &get_fonts() const
+    {
+        return m_fonts;
+    }
 
-		ImGuiIO* io = nullptr;
+  private: /* Static properties */
+    static constexpr bool USE_DARK_THEME = true;
 
-		Fonts m_fonts;
-	};
-}
+  private: /* Fields */
+    Core &core;
+    Logger &logger;
+
+    ImGuiIO *io = nullptr;
+
+    Fonts m_fonts;
+};
+} // namespace rotm

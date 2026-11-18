@@ -2,46 +2,46 @@
 
 namespace rotm
 {
-	class Core;
+class Core;
 
-	class CoreModule
-	{
-	public:
-		CoreModule(Core& coreRef) : core(coreRef)
-		{
-		}
+class CoreModule
+{
+  public:
+    CoreModule(Core &coreRef) : core(coreRef)
+    {
+    }
 
-		virtual ~CoreModule() = default;
+    virtual ~CoreModule() = default;
 
-		CoreModule() = delete;
-		CoreModule(const CoreModule&) = delete;
-		CoreModule(CoreModule&&) = delete;
-		CoreModule& operator=(const CoreModule&) = delete;
-		CoreModule& operator=(CoreModule&&) = delete;
+    CoreModule() = delete;
+    CoreModule(const CoreModule &) = delete;
+    CoreModule(CoreModule &&) = delete;
+    CoreModule &operator=(const CoreModule &) = delete;
+    CoreModule &operator=(CoreModule &&) = delete;
 
-		virtual void update()
-		{
-		}
+    virtual void update()
+    {
+    }
 
-		virtual void tick()
-		{
-		}
+    virtual void tick()
+    {
+    }
 
-		virtual void draw()
-		{
-		}
+    virtual void draw()
+    {
+    }
 
-		virtual void sync_gui()
-		{
-		}
+    virtual void sync_gui()
+    {
+    }
 
-		virtual bool want_exit() const
-		{
-			return m_wantExit;
-		}
+    virtual bool want_exit() const
+    {
+        return m_wantExit;
+    }
 
-	protected:
-		Core& core;
-		bool m_wantExit = false;
-	};
+  protected:
+    Core &core;
+    bool m_wantExit = false;
+};
 } // namespace rotm

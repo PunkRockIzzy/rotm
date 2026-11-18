@@ -65,7 +65,7 @@ std::expected<SceneFileData, std::string> read_scene(std::string_view sceneName)
 
     if (!fs::is_regular_file(tilemapFileName))
     {
-        return err_t{std::format("Scene is missing tilemap. ({})", tilemapFileName)};
+        return err_t{std::format("Scene is missing tilemap. ({})", tilemapFileName.string())};
     }
 
     auto readTilemapResult = read_tilemap(tilemapFileName);

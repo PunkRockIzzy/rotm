@@ -630,22 +630,100 @@ void Editor::redo()
 void Editor::draw_tile_cursor()
 {
     using std::numbers::pi;
+    using enum EditTool;
 
     if (m_currentCommand)
         return;
 
-    const double sinNormalized = (std::sin(m_tileCursorAnimCounter * TILE_CURSOR_ANIM_SPEED) + 1) * 0.5;
-    m_tileCursorAnimCounter += core.get_delta_time();
-
-    if (m_tileCursorAnimCounter >= pi * 2.0)
-        m_tileCursorAnimCounter = 0;
-
+    const AbsoluteTileCoord coordAbs = global_to_absolute(m_windowSceneEditor.mouseTile);
     const int tileSize = m_scene->tileset.get_tile_size();
+    // const double sinNormalized = (std::sin(m_tileCursorAnimCounter * TILE_CURSOR_ANIM_SPEED) + 1) * 0.5;
+    // m_tileCursorAnimCounter += core.get_delta_time();
 
-    const Vector2 mouseTilePos = tile_to_point(m_windowSceneEditor.mouseTile, tileSize);
-    const Rectangle rec = {mouseTilePos.x, mouseTilePos.y, static_cast<float>(tileSize), static_cast<float>(tileSize)};
+    switch (m_editTool)
+    {
+    case Pencil: {
+        const int &width = m_windowSceneEditor.pencilTileWidth;
+        const int &height = m_windowSceneEditor.pencilTileHeight;
 
-    DrawRectangleLinesEx(rec, 2.0f, Fade(WHITE, sinNormalized));
+        AbsoluteTileCoord tileMin = {coordAbs.x - (width / 2), coordAbs.y - (height / 2)};
+        AbsoluteTileCoord tileMax = {coordAbs.x + (width / 2), coordAbs.y + (height / 2)};
+
+        if (width % 2 == 0)
+            ++tileMin.x;
+        if (height % 2 == 0)
+            ++tileMin.y;
+
+        std::vector<Rectangle> recs{static_cast<std::size_t>(width * height)};
+
+        for (int y = tileMin.y; y <= tileMax.y; ++y)
+        {
+            for (int x = tileMin.x; x <= tileMax.x; ++x)
+            {
+                const GlobalTileCoord c = absolute_to_global({x, y});
+                const Vector2 pos = tile_to_point(c, tileSize);
+
+                Rectangle rec = {pos.x, pos.y, static_cast<float>(tileSize), static_cast<float>(tileSize)};
+
+                recs.push_back(std::move(rec));
+            }
+
+            if (m_tileCursorAnimCounter >= pi * 2.0)
+                m_tileCursorAnimCounter = 0;
+
+            for (const Rectangle &rec : recs)
+            {
+                DrawRectangleLinesEx(rec, 2.0f, Fade(WHITE, 0.5f));
+            }
+        }
+    }
+    break;
+
+    case Brush:
+        break;
+
+    case Eraser: {
+        {
+            const int &width = m_windowSceneEditor.eraserTileWidth;
+            const int &height = m_windowSceneEditor.eraserTileHeight;
+
+            AbsoluteTileCoord tileMin = {coordAbs.x - (width / 2), coordAbs.y - (height / 2)};
+            AbsoluteTileCoord tileMax = {coordAbs.x + (width / 2), coordAbs.y + (height / 2)};
+
+            if (width % 2 == 0)
+                ++tileMin.x;
+            if (height % 2 == 0)
+                ++tileMin.y;
+
+            std::vector<Rectangle> recs{static_cast<std::size_t>(width * height)};
+
+            for (int y = tileMin.y; y <= tileMax.y; ++y)
+            {
+                for (int x = tileMin.x; x <= tileMax.x; ++x)
+                {
+                    const GlobalTileCoord c = absolute_to_global({x, y});
+                    const Vector2 pos = tile_to_point(c, tileSize);
+
+                    Rectangle rec = {pos.x, pos.y, static_cast<float>(tileSize), static_cast<float>(tileSize)};
+
+                    recs.push_back(std::move(rec));
+                }
+
+                if (m_tileCursorAnimCounter >= pi * 2.0)
+                    m_tileCursorAnimCounter = 0;
+
+                for (const Rectangle &rec : recs)
+                {
+                    DrawRectangleLinesEx(rec, 2.0f, Fade(WHITE, 0.5f));
+                }
+            }
+        }
+    }
+    break;
+
+    default:
+        break;
+    }
 }
 
 void Editor::draw_edit_preview()
@@ -1441,7 +1519,7 @@ void Editor::popup_enter_tileset_name()
             }
             else
             {
-                logger.print_info()("Got tileset metadata. (filename={})", m_tilesetFilename + TILESET_METADATA_EXT);
+                logger.print_info()("Got tileset metadata. ({})", m_tilesetFilename);
                 init_scene(metadataResult.value());
 
                 ImGui::CloseCurrentPopup();
