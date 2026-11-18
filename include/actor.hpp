@@ -23,7 +23,7 @@ class Actor
     {
     }
 
-    ~Actor() = default;
+    virtual ~Actor() = default;
 
     Actor() = delete;
 
