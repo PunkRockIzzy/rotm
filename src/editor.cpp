@@ -1199,13 +1199,13 @@ void Editor::window_stats()
 
         ImGui::SeparatorText("Tilemap");
 
-        ImGui::Text("%llu tiles", tilemap.get_tile_count());
-        ImGui::Text("%llu chunks", tilemap.get_chunk_count());
+        ImGui::Text("%zu tiles", tilemap.get_tile_count());
+        ImGui::Text("%zu chunks", tilemap.get_chunk_count());
 
         ImGui::SeparatorText("Render");
 
-        ImGui::Text("%llu visible chunks", tilemapRenderer.get_visible_chunk_count());
-        ImGui::Text("%llu chunks drawn", tilemapRenderer.get_chunks_drawn_count());
+        ImGui::Text("%zu visible chunks", tilemapRenderer.get_visible_chunk_count());
+        ImGui::Text("%zu chunks drawn", tilemapRenderer.get_chunks_drawn_count());
     }
 
     ImGui::End();
@@ -1371,7 +1371,7 @@ void Editor::window_log_table()
 
         // Show tooltip with log metadata on hovering a message.
         ImGui::SetItemTooltip("Level: %s\n"
-                              "Time: %02lli:%02lli:%02lli.%03lli\n"
+                              "Time: %02zi:%02zi:%02zi.%03zi\n"
                               "Function: %.*s\n"
                               "File: %s, line %u",
                               Logger::level_to_string(message.level).data(), message.time.hours().count(),
