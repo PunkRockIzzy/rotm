@@ -58,6 +58,75 @@ class Editor final : public CoreModule
     static constexpr int PENCIL_SIZE_MAX = TilemapChunk::SIZE;
     static constexpr int ERASER_SIZE_MAX = TilemapChunk::SIZE;
 
+  private:  /* Types */
+    // Session info to be saved to INI
+    struct Config
+    {
+        struct Window
+        {
+            int x;
+            int y;
+            int width;
+            int height;
+            bool maximized;
+        } window;
+    };
+
+    // Tools available in scene editor
+    enum class EditTool : unsigned short
+    {
+        None = 0,
+        Pencil,
+        Brush,
+        Eraser,
+        Count
+    };
+
+    struct TileEdit
+    {
+        TileEdit() = delete;
+
+        TileEdit(const GlobalTileCoord &_position, const TileData &_previous, const TileData &_replacement)
+            : position(_position), previous(_previous), replacement(_replacement)
+        {
+        }
+
+        GlobalTileCoord position;
+        TileData previous;
+        TileData replacement;
+    };
+
+    struct TileEditCommand
+    {
+        std::vector<TileEdit> edits;
+
+        void apply(Tilemap &tilemap);
+        void undo(Tilemap &tilemap);
+        void redo(Tilemap &tilemap);
+    };
+
+    class EditHistory
+    {
+      public:
+        void push(TileEditCommand command);
+        void undo(Tilemap &tilemap);
+        void redo(Tilemap &tilemap);
+        void clear();
+
+        bool can_undo() const
+        {
+            return m_cursor > 0;
+        }
+        bool can_redo() const
+        {
+            return m_cursor < m_commands.size();
+        }
+
+      private:
+        std::vector<TileEditCommand> m_commands;
+        std::size_t m_cursor = 0;
+    };
+
   private: /* Methods */
     void cfg_update();
     void cfg_apply();
@@ -143,72 +212,9 @@ class Editor final : public CoreModule
     // Reference to core.resources
     ResourceManager &resources;
 
-    // Session info to be saved to INI
-    struct Config
-    {
-        struct Window
-        {
-            int x;
-            int y;
-            int width;
-            int height;
-            bool maximized;
-        } window;
-    } m_cfg;
+    Config m_cfg;
 
-    enum class EditTool : unsigned short
-    {
-        None = 0,
-        Pencil,
-        Brush,
-        Eraser,
-        Count
-    } m_editTool = EditTool::Pencil;
-
-    struct TileEdit
-    {
-        TileEdit() = delete;
-
-        TileEdit(const GlobalTileCoord &_position, const TileData &_previous, const TileData &_replacement)
-            : position(_position), previous(_previous), replacement(_replacement)
-        {
-        }
-
-        GlobalTileCoord position;
-        TileData previous;
-        TileData replacement;
-    };
-
-    struct TileEditCommand
-    {
-        std::vector<TileEdit> edits;
-
-        void apply(Tilemap &tilemap);
-        void undo(Tilemap &tilemap);
-        void redo(Tilemap &tilemap);
-    };
-
-    class EditHistory
-    {
-      public:
-        void push(TileEditCommand command);
-        void undo(Tilemap &tilemap);
-        void redo(Tilemap &tilemap);
-        void clear();
-
-        bool can_undo() const
-        {
-            return m_cursor > 0;
-        }
-        bool can_redo() const
-        {
-            return m_cursor < m_commands.size();
-        }
-
-      private:
-        std::vector<TileEditCommand> m_commands;
-        std::size_t m_cursor = 0;
-    };
+    EditTool m_editTool = EditTool::Pencil;
 
     std::unique_ptr<Scene> m_scene;
     RenderTexture m_sceneView;
