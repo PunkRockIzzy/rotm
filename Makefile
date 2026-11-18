@@ -11,15 +11,31 @@ BINDIR := bin/$(MODE)
 SRCS := $(wildcard $(SRCDIR)/*.cpp)
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 
+ifeq ($(shell uname -s),Linux)
+	HOST_OS := LINUX
+else ifeq ($(OS),Windows_NT)
+	HOST_OS := WIN32
+endif
+
 RAYLIB_SRCDIR := external/raylib/src
 RAYLIB_OBJDIR := $(OBJDIR)/raylib
 RAYLIB_SRCS := $(wildcard $(RAYLIB_SRCDIR)/*.c)
 RAYLIB_OBJS := $(patsubst $(RAYLIB_SRCDIR)/%.c,$(RAYLIB_OBJDIR)/%.o,$(RAYLIB_SRCS))
-RAYLIB_CFLAGS := -Wall -D_GNU_SOURCE -DPLATFORM_DESKTOP_GLFW -DGRAPHICS_API_OPENGL_33 \
--Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing -std=c99 -DUNICODE -MMD \
--O1 -Werror=implicit-function-declaration \
--I$(RAYLIB_SRCDIR) \
--I$(RAYLIB_SRCDIR)/external/glfw/include
+RAYLIB_CFLAGS := -Wall -Wno-missing-braces -Werror=pointer-arith -Werror=implicit-function-declaration \
+-DPLATFORM_DESKTOP_GLFW -DGRAPHICS_API_OPENGL_33 \
+-fno-strict-aliasing -std=c99 -MMD -O1 -I$(RAYLIB_SRCDIR) -I$(RAYLIB_SRCDIR)/external/glfw/include
+
+ifeq ($(HOST_OS),LINUX)
+	RAYLIB_CFLAGS += -D_DEFAULT_SOURCE -D_GLFW_X11
+else ifeq ($(HOST_OS),WIN32)
+	RAYLIB_CFLAGS += -D_GNU_SOURCE -DUNICODE
+endif
+
+#RAYLIB_CFLAGS := -Wall -D_GNU_SOURCE -DPLATFORM_DESKTOP_GLFW -DGRAPHICS_API_OPENGL_33 \
+#-Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing -std=c99 -DUNICODE -MMD \
+#-O1 -Werror=implicit-function-declaration \
+#-I$(RAYLIB_SRCDIR) \
+#-I$(RAYLIB_SRCDIR)/external/glfw/include
 
 IMGUI_SRCDIR := external/imgui
 IMGUI_OBJDIR := $(OBJDIR)/imgui
@@ -35,7 +51,13 @@ TRACY_SRCDIR := external/tracy/public
 TRACY_OBJDIR := $(OBJDIR)/tracy
 TRACY_OBJ := $(TRACY_OBJDIR)/TracyClient.o
 
-CXX := g++
+# apt does not provide g++ 16+, install via homebrew
+ifeq ($(HOST_OS),WIN32)
+	CXX := g++
+else ifeq ($(HOST_OS),LINUX)
+	CXX := g++-16
+endif
+
 CXXFLAGS := -Wall -Wextra -Wpedantic -std=gnu++26 -MMD \
 -I$(INCLUDEDIR) \
 -I$(RAYLIB_SRCDIR) \
@@ -45,11 +67,15 @@ CXXFLAGS := -Wall -Wextra -Wpedantic -std=gnu++26 -MMD \
 -Iexternal/imgui/misc/cpp \
 -Iexternal/mINI/src
 
-EXE := .exe
+ifeq ($(HOST_OS),LINUX)
+	EXE :=
+else ifeq ($(HOST_OS),WIN32)
+	EXE := .exe
+endif
 
 TARGET := $(BINDIR)/$(PROJECT)$(EXE)
 
-CXXFLAGS_DEBUG := $(CXXFLAGS) -O0 -g
+CXXFLAGS_DEBUG := $(CXXFLAGS) -g
 CXXFLAGS_PROFILE := $(CXXFLAGS) -O2 -g -DTRACY_ENABLE
 CXXFLAGS_RELEASE := $(CXXFLAGS) -O2 -DNDEBUG
 
@@ -64,7 +90,13 @@ else
 endif
 
 LDFLAGS := -Lexternal/raylib/lib -Lexternal/rlImGui/lib
-LDLIBS := -lstdc++exp -lgdi32 -lwinmm -lws2_32 -ldbghelp -lsecur32
+LDLIBS := -lstdc++exp
+
+ifeq ($(HOST_OS),LINUX)
+	LDLIBS += -lGL -lm -lpthread -ldl -lrt -lX11
+else ifeq ($(HOST_OS),WIN32)
+	LDLIBS += -lgdi32 -lwinmm -lws2_32 -ldbghelp -lsecur32
+endif
 
 all: $(TARGET)
 
