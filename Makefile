@@ -1,3 +1,9 @@
+ifeq ($(shell uname -s),Linux)
+	HOST_OS := LINUX
+else ifeq ($(OS),Windows_NT)
+	HOST_OS := WIN32
+endif
+
 PROJECT := rotm
 
 SRCDIR := src
@@ -5,17 +11,18 @@ INCLUDEDIR := include
 
 MODE ?= debug
 
+# apt does not provide g++ 16+, install via homebrew
+ifeq ($(HOST_OS),WIN32)
+	CXX := g++
+else ifeq ($(HOST_OS),LINUX)
+	CXX := g++-16
+endif
+
 OBJDIR := obj/$(MODE)
 BINDIR := bin/$(MODE)
 
 SRCS := $(wildcard $(SRCDIR)/*.cpp)
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
-
-ifeq ($(shell uname -s),Linux)
-	HOST_OS := LINUX
-else ifeq ($(OS),Windows_NT)
-	HOST_OS := WIN32
-endif
 
 RAYLIB_SRCDIR := external/raylib/src
 RAYLIB_OBJDIR := $(OBJDIR)/raylib
@@ -56,13 +63,6 @@ CXXFLAGS := -std=gnu++23 -MMD \
 -Iexternal/mINI/src
 
 EXTERNAL_CXXFLAGS := -w $(CXXFLAGS)
-
-# apt does not provide g++ 16+, install via homebrew
-ifeq ($(HOST_OS),WIN32)
-	CXX := g++
-else ifeq ($(HOST_OS),LINUX)
-	CXX := g++-16
-endif
 
 CXXFLAGS := -std=gnu++23 -MMD \
 -I$(INCLUDEDIR) \
