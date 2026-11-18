@@ -365,11 +365,20 @@ void Editor::end_load_scene()
         return;
     }
 
+    logger.print_info()("Done loading scene, initializing...");
+
     SceneFileData output = std::move(*result);
 
     m_tilesetFilename = output.tilesetPath.string();
 
     load_tileset_atlas();
+
+    if (!m_tilesetAtlas)
+    {
+        logger.print_warning()("Failed to load tileset: {}", m_tilesetLoadErr);
+        m_tilesetAtlas.reset();
+        return;
+    }
 
     init_scene(output.tilesetMetadata, std::move(output.tilemap));
 }
