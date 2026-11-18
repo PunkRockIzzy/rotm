@@ -84,8 +84,15 @@ void Editor::update()
 
     if (WindowShouldClose())
     {
-        m_wantExit = true;
-        return;
+        if (m_sceneUnsavedChanges)
+        {
+            m_openUnsavedScene = true;
+        }
+        else
+        {
+            m_wantExit = true;
+            return;
+        }
     }
 
     if (m_saveJob.valid() && !is_save_in_progress())
@@ -301,9 +308,15 @@ void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilema
 
 void Editor::destroy_scene()
 {
+    if (m_sceneUnsavedChanges)
+    {
+        m_openUnsavedScene = true;
+        m_unsavedSceneCallback = [this]() -> void { destroy_scene(); };
+        return;
+    }
+
     m_scene.reset();
     m_editHistory.clear();
-    m_sceneUnsavedChanges = false;
 }
 
 void Editor::begin_save_scene()
@@ -543,7 +556,12 @@ void Editor::handle_shortcuts()
             }
             case KEY_HOME:
                 if (m_sceneUnsavedChanges)
+                {
                     m_openUnsavedScene = true;
+                    m_unsavedSceneCallback = [this]() -> void {
+                        core.request_module_transition(std::make_unique<Game>(core));
+                    };
+                }
                 else
                     core.request_module_transition(std::make_unique<Game>(core));
                 break;
@@ -1960,6 +1978,65 @@ void Editor::popup_init_stress_test()
 
     if (!is_init_stress_test_in_progress())
         ImGui::CloseCurrentPopup();
+
+    ImGui::EndPopup();
+}
+
+void Editor::popup_unsaved_scene()
+{
+    if (m_openUnsavedScene)
+    {
+        ImGui::OpenPopup("Unsaved scene edits");
+        m_openUnsavedScene = false;
+    }
+
+    const bool active = ImGui::BeginPopupModal("Unsaved scene edits", nullptr,
+                                               ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+    if (!active)
+        return;
+
+    if (m_unsavedSceneBeganSave)
+    {
+        if (is_save_in_progress())
+        {
+            ImGui::TextUnformatted("Saving...");
+        }
+        else
+        {
+            ImGui::CloseCurrentPopup();
+            m_unsavedSceneBeganSave = false;
+            m_unsavedSceneCallback();
+            m_unsavedSceneCallback = nullptr;
+        }
+    }
+    else
+    {
+        ImGui::TextUnformatted("This scene has unsaved changes. Do you want to save?");
+
+        const bool pressedOK = ImGui::Button("Save");
+        ImGui::SameLine();
+        const bool pressedDontSave = ImGui::Button("Don't save");
+        ImGui::SameLine();
+        const bool pressedCancel = ImGui::Button("Cancel");
+
+        if (pressedOK)
+        {
+            m_unsavedSceneBeganSave = true;
+            begin_save_scene();
+        }
+        else if (pressedDontSave)
+        {
+            ImGui::CloseCurrentPopup();
+            m_sceneUnsavedChanges = false;
+            m_unsavedSceneCallback();
+            m_unsavedSceneCallback = nullptr;
+        }
+        else if (pressedCancel)
+        {
+            ImGui::CloseCurrentPopup();
+        }
+    }
 
     ImGui::EndPopup();
 }

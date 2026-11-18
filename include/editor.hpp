@@ -11,6 +11,7 @@
 
 #include <array>
 #include <expected>
+#include <functional>
 #include <future>
 #include <memory>
 #include <optional>
@@ -245,7 +246,6 @@ class Editor final : public CoreModule
     bool m_openConfigureTileSize = false;
     bool m_openConfigureUsableTiles = false;
     bool m_openInitStressTest = false;
-    bool m_openUnsavedScene = false;
 
     bool m_openLoadScene = false;
     std::vector<std::filesystem::path> m_loadableScenes;
@@ -260,6 +260,10 @@ class Editor final : public CoreModule
     std::string m_tilesetLoadErr;
     int m_tileSizeInput = TILE_SIZE_INPUT_DEFAULT;
     std::vector<bool> m_usableTilesInput;
+
+    bool m_openUnsavedScene = false;
+    bool m_unsavedSceneBeganSave = false;
+    std::function<void()> m_unsavedSceneCallback;
 
     struct GuiWindowSceneEditor
     {
