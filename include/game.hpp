@@ -8,14 +8,17 @@ namespace rotm
 {
 class Game final : public CoreModule
 {
-  public:
+  public: /* Methods */
     Game(Core &coreRef);
     ~Game() override;
 
     void update() override;
     void draw() override;
 
-  private:
+  private: /* Methods */
+    static Vector2 get_camera_offset();
+
+  private: /* Fields */
     std::unique_ptr<Scene> m_scene;
 
     SpriteActor m_player;

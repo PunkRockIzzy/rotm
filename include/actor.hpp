@@ -86,6 +86,13 @@ class SpriteActor : public Actor
         return {position.x, position.y, textureSize.x * scale.x, textureSize.y * scale.y};
     }
 
+    virtual Vector2 center_point()
+    {
+        const Rectangle rec = get_rec();
+
+        return {rec.x + (rec.width * 0.5f), rec.y + (rec.height * 0.5f)};
+    }
+
   public:
     // Multiplier of size relative to sprite texture.
     Vector2 scale = {1.0f, 1.0f};
