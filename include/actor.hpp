@@ -35,7 +35,8 @@ class Actor
 
     virtual void update(double deltaTime)
     {
-        (void)deltaTime; // suppress compiler warning
+        position.x += velocity.x * deltaTime;
+        position.y += velocity.y * deltaTime;
     }
 
   public: /* Fields */
@@ -71,6 +72,11 @@ class SpriteActor : public Actor
     virtual const Sprite &get_sprite() const
     {
         return m_sprite;
+    }
+
+    virtual void update(double deltaTime)
+    {
+        Actor::update(deltaTime);
     }
 
     virtual void draw() const

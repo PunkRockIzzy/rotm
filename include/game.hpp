@@ -1,7 +1,7 @@
 #pragma once
 
-#include "actor.hpp"
 #include "core_module.hpp"
+#include "player.hpp"
 #include "scene.hpp"
 
 namespace rotm
@@ -24,6 +24,6 @@ class Game final : public CoreModule
   private: /* Fields */
     std::unique_ptr<Scene> m_scene;
 
-    SpriteActor m_player;
+    Player m_player;
 };
 } // namespace rotm

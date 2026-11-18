@@ -49,6 +49,8 @@ void Game::update()
     if (IsKeyPressed(KEY_HOME))
         core.request_module_transition(std::make_unique<Editor>(core));
 
+    update_player();
+
     update_camera();
 
     m_scene->render.tilemap.update(m_scene->tileset, m_scene->tilemap, m_scene->camera);
@@ -69,6 +71,11 @@ void Game::draw()
     m_player.draw();
 
     EndMode2D();
+}
+
+void Game::update_player()
+{
+    m_player.update(core.get_delta_time());
 }
 
 void Game::update_camera()
