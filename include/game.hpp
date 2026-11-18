@@ -7,7 +7,7 @@ namespace rotm
 class Game final : public CoreModule
 {
   public:
-    Game(Core& coreRef);
+    Game(Core &coreRef);
     ~Game() override;
 
     void update() override;

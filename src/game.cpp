@@ -5,8 +5,7 @@
 
 namespace rotm
 {
-Game::Game(Core& coreRef) :
-    CoreModule(coreRef)
+Game::Game(Core &coreRef) : CoreModule(coreRef)
 {
 }
 
@@ -16,7 +15,6 @@ Game::~Game()
 
 void Game::update()
 {
-
 }
 
 void Game::draw()
