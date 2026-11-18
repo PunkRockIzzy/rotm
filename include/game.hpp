@@ -16,6 +16,9 @@ class Game final : public CoreModule
     void draw() override;
 
   private: /* Methods */
+    void update_player();
+
+    void update_camera();
     static Vector2 get_camera_offset();
 
   private: /* Fields */

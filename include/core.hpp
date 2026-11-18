@@ -86,6 +86,11 @@ class Core
         return m_raylibConfig;
     }
 
+    void request_module_transition(std::unique_ptr<CoreModule> &&module)
+    {
+        m_moduleQueued = std::move(module);
+    }
+
   private: /* Static properties */
     static constexpr double SECONDS_PER_TICK = 1.0 / static_cast<double>(TICKS_PER_SECOND);
     static constexpr int MAX_TICKS_PER_FRAME = 4;
@@ -131,6 +136,7 @@ class Core
     std::unique_ptr<GuiContext> m_guiContext;
 
     std::unique_ptr<CoreModule> m_moduleActive;
+    std::unique_ptr<CoreModule> m_moduleQueued;
 
     bool m_wantExit = false;
     RaylibConfig m_raylibConfig = RaylibConfig{};

@@ -1,6 +1,7 @@
 #include "editor.hpp"
 #include "core.hpp"
 #include "exception.hpp"
+#include "game.hpp"
 #include "gui_context.hpp"
 #include "logger.hpp"
 #include "renderer_tilemap.hpp"
@@ -532,7 +533,12 @@ void Editor::handle_shortcuts()
                 TilemapRenderer &renderer = m_scene->render.tilemap;
 
                 renderer.showChunkBorders = !renderer.showChunkBorders;
+
+                break;
             }
+            case KEY_HOME:
+                core.request_module_transition(std::make_unique<Game>(core));
+                break;
             }
         }
 

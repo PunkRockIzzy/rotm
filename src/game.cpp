@@ -1,6 +1,7 @@
 #include "game.hpp"
 
 #include "core.hpp"
+#include "editor.hpp"
 #include "exception.hpp"
 #include "raylib.h"
 #include "serialize_scene.hpp"
@@ -24,8 +25,13 @@ Game::Game(Core &coreRef)
     m_scene = std::make_unique<Scene>(Tileset{std::move(tilesetAtlas), sceneData.tilesetMetadata},
                                       sceneData.tilesetPath, std::move(sceneData.tilemap));
 
-    m_scene->camera = {
-        .offset = get_camera_offset(), .target = m_player.center_point(), .rotation = 0.0f, .zoom = 1.0f};
+    Camera2D &cam = m_scene->camera;
+
+    cam.offset = get_camera_offset();
+    cam.target = m_player.center_point();
+    cam.rotation = 0.0f;
+
+    cam.zoom = 4.0f;
 }
 
 Game::~Game()
@@ -40,7 +46,10 @@ void Game::update()
         return;
     }
 
-    m_scene->camera.target = m_player.center_point();
+    if (IsKeyPressed(KEY_HOME))
+        core.request_module_transition(std::make_unique<Editor>(core));
+
+    update_camera();
 
     m_scene->render.tilemap.update(m_scene->tileset, m_scene->tilemap, m_scene->camera);
 }
@@ -60,6 +69,11 @@ void Game::draw()
     m_player.draw();
 
     EndMode2D();
+}
+
+void Game::update_camera()
+{
+    m_scene->camera.target = m_player.center_point();
 }
 
 Vector2 Game::get_camera_offset()

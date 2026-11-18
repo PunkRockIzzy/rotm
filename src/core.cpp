@@ -1,6 +1,7 @@
 #include "core.hpp"
 #include "editor.hpp"
 #include "exception.hpp"
+// #include "game.hpp"
 #include "gui_context.hpp"
 #include "version.hpp"
 
@@ -74,6 +75,12 @@ void Core::run()
         {
             if (!m_moduleActive)
                 throw exception::NoActiveCoreModule();
+
+            if (m_moduleQueued)
+            {
+                m_moduleActive.reset();
+                m_moduleActive = std::move(m_moduleQueued);
+            }
 
             m_deltaTime = calculate_delta_time();
             m_secondsSinceTick += m_deltaTime;
