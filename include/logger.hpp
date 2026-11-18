@@ -175,7 +175,7 @@ class Logger
 
         const std::string levelText = std::format("{:>10}", levelLabel);
 
-        std::println("{}{}{} {}{}{} {:80} {}@ {} ({}:{}){}", colorGray, msg.time, colorReset, colorText, levelText,
+        std::println("{}{} {}{}{} {:80} {}@ {} ({}:{}){}", colorGray, msg.time, colorText, levelText,
                      colorReset, msg.text, colorGray, funcName, location.file_name(), location.line(), colorReset);
     }
 
