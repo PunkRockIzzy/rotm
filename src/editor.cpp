@@ -994,7 +994,7 @@ void Editor::window_scene_editor()
 
         window_scene_editor_handle_input();
 
-        ImGui::Image(static_cast<ImTextureRef>(m_sceneView.texture.id),
+        ImGui::Image(static_cast<ImTextureID>(m_sceneView.texture.id),
                      {static_cast<float>(m_sceneView.texture.width), static_cast<float>(m_sceneView.texture.height)},
                      {0.0f, 1.0f}, {1.0f, 0.0f});
 
@@ -1170,7 +1170,7 @@ void Editor::child_scene_editor_tilepalette(const ImVec2 &size)
 
     const ImVec2 imagePos = ImGui::GetCursorScreenPos();
 
-    ImGui::Image(static_cast<ImTextureRef>(atlas.id), imageSizeScaled);
+    ImGui::Image(static_cast<ImTextureID>(atlas.id), imageSizeScaled);
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
@@ -1577,7 +1577,7 @@ void Editor::popup_configure_tile_size()
 
     const ImVec2 imagePos = ImGui::GetCursorScreenPos();
 
-    ImGui::Image(static_cast<ImTextureRef>(atlasTexture.id), textureSizeScaled);
+    ImGui::Image(static_cast<ImTextureID>(atlasTexture.id), textureSizeScaled);
 
     ImDrawList *drawList = ImGui::GetWindowDrawList();
 
@@ -1652,7 +1652,7 @@ void Editor::popup_configure_tileset()
 
     const ImVec2 imagePos = ImGui::GetCursorScreenPos();
 
-    ImGui::Image(static_cast<ImTextureRef>(atlasTexture.id), textureSizeScaled);
+    ImGui::Image(static_cast<ImTextureID>(atlasTexture.id), textureSizeScaled);
 
     const bool imageHovered = ImGui::IsItemHovered();
 
