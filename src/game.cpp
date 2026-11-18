@@ -80,6 +80,7 @@ void Game::update_player()
 
 void Game::update_camera()
 {
+    m_scene->camera.offset = get_camera_offset();
     m_scene->camera.target = m_player.center_point();
 }
 
