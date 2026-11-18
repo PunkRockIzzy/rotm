@@ -140,6 +140,9 @@ void Editor::sync_gui()
     popup_open_scene();
     popup_save_scene();
 
+    popup_init_stress_test();
+    popup_unsaved_scene();
+
     ImGui::PopStyleColor(4);
 }
 
@@ -406,6 +409,8 @@ void Editor::begin_init_stress_test()
         out.stress_test();
         return out;
     });
+
+    m_openInitStressTest = true;
 }
 
 void Editor::end_init_stress_test()
@@ -537,7 +542,10 @@ void Editor::handle_shortcuts()
                 break;
             }
             case KEY_HOME:
-                core.request_module_transition(std::make_unique<Game>(core));
+                if (m_sceneUnsavedChanges)
+                    m_openUnsavedScene = true;
+                else
+                    core.request_module_transition(std::make_unique<Game>(core));
                 break;
             }
         }

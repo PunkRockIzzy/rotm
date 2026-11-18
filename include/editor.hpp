@@ -58,7 +58,7 @@ class Editor final : public CoreModule
     static constexpr int PENCIL_SIZE_MAX = TilemapChunk::SIZE;
     static constexpr int ERASER_SIZE_MAX = TilemapChunk::SIZE;
 
-  private:  /* Types */
+  private: /* Types */
     // Session info to be saved to INI
     struct Config
     {
@@ -206,6 +206,8 @@ class Editor final : public CoreModule
 
     void popup_init_stress_test();
 
+    void popup_unsaved_scene();
+
   private: /* Fields */
     // Reference to core.logger
     Logger &logger;
@@ -243,6 +245,7 @@ class Editor final : public CoreModule
     bool m_openConfigureTileSize = false;
     bool m_openConfigureUsableTiles = false;
     bool m_openInitStressTest = false;
+    bool m_openUnsavedScene = false;
 
     bool m_openLoadScene = false;
     std::vector<std::filesystem::path> m_loadableScenes;
