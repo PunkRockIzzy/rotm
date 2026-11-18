@@ -1041,17 +1041,17 @@ void Editor::child_scene_editor_toolbox(const ImVec2 &windowMax)
     const float buttonWidth = windowSize.x;
 
     ImGui::BeginDisabled(m_editTool == Pencil);
-    const bool clickedPencil = ImGui::Button("Pencil", {buttonWidth, 0.0f});
+    const bool clickedPencil = ImGui::Button("  Pencil", {buttonWidth, 0.0f});
     ImGui::SetItemTooltip("Place tiles at mouse position. Configurable size.");
     ImGui::EndDisabled();
 
     ImGui::BeginDisabled(m_editTool == Brush);
-    const bool clickedBrush = ImGui::Button("Brush", {buttonWidth, 0.0f});
+    const bool clickedBrush = ImGui::Button("  Brush", {buttonWidth, 0.0f});
     ImGui::SetItemTooltip("Place tiles using prefabricated patterns.");
     ImGui::EndDisabled();
 
     ImGui::BeginDisabled(m_editTool == Eraser);
-    const bool clickedEraser = ImGui::Button("Eraser", {buttonWidth, 0.0f});
+    const bool clickedEraser = ImGui::Button("  Eraser", {buttonWidth, 0.0f});
     ImGui::SetItemTooltip("Remove tiles at mouse position. Configurable size.");
     ImGui::EndDisabled();
 
