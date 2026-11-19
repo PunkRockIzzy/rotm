@@ -16,7 +16,7 @@ Game::Game(Core &coreRef)
 
     if (!result.has_value())
     {
-        throw exception::Base(result.error());
+        throw exception::Base(std::format("Failed to load scene. ({})", result.error()));
     }
 
     SceneFileData sceneData = std::move(*result);
@@ -40,6 +40,11 @@ Game::~Game()
 
 void Game::update()
 {
+    if (!m_scene)
+        throw exception::Base("Game: Missing scene!");
+
+    const double deltaTime = core.get_delta_time();
+
     if (WindowShouldClose())
     {
         m_wantExit = true;
@@ -49,7 +54,7 @@ void Game::update()
     if (IsKeyPressed(KEY_HOME))
         core.request_module_transition(std::make_unique<Editor>(core));
 
-    update_player();
+    m_player.update(deltaTime, m_scene->tilemap, m_scene->tileset.get_tile_size());
 
     update_camera();
 
@@ -71,11 +76,6 @@ void Game::draw()
     m_player.draw();
 
     EndMode2D();
-}
-
-void Game::update_player()
-{
-    m_player.update(core.get_delta_time());
 }
 
 void Game::update_camera()

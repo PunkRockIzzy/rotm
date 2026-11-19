@@ -32,11 +32,16 @@ class Sprite
         const Texture2D &texture = get_texture();
         const Vector2 textureSize = {static_cast<float>(texture.width), static_cast<float>(texture.height)};
 
-        const Rectangle srcrec = {0.0f, 0.0f, textureSize.x, textureSize.y};
+        const Rectangle srcrec = {0.0f, 0.0f, (flipH ? -textureSize.x : textureSize.x),
+                                  (flipV ? -textureSize.y : textureSize.y)};
         const Rectangle dstrec = {position.x, position.y, textureSize.x * scale.x, textureSize.y * scale.y};
 
         DrawTexturePro(texture, srcrec, dstrec, {0.0f, 0.0f}, rotation, tint);
     }
+
+  public:
+    bool flipH = false;
+    bool flipV = false;
 
   private:
     std::shared_ptr<TextureResource> m_texture;

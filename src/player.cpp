@@ -1,7 +1,11 @@
 #include "player.hpp"
-#include "raylib.h"
+#include "game.hpp"
+#include "tile_math.hpp"
+#include "tilemap.hpp"
 
 #include <memory>
+
+#include <raylib.h>
 
 namespace rotm
 {
@@ -10,21 +14,57 @@ Player::Player(Vector2 startPos, std::shared_ptr<TextureResource> &&spriteTextur
 {
 }
 
-void Player::update(double deltaTime)
+void Player::update(double deltaTime, const Tilemap &tilemap, int tileSize)
 {
     if (IsKeyDown(KEY_D))
     {
         velocity.x = 50.0f;
+        sprite.flipH = false;
     }
     else if (IsKeyDown(KEY_A))
     {
         velocity.x = -50.0f;
+        sprite.flipH = true;
     }
     else
     {
         velocity.x = 0.0f;
     }
 
-    SpriteActor::update(deltaTime);
+    const std::optional<GlobalTileCoord> touchingGround = touching_ground(tilemap, tileSize);
+
+    if (touchingGround)
+    {
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            velocity.y = -Game::Constants::JUMP_FORCE;
+        }
+    }
+    else
+    {
+        velocity.y += Game::Constants::GRAVITY * deltaTime;
+    }
+
+    SpriteActor::update(deltaTime, tilemap, tileSize);
+
+    resolve_ground_collision(tilemap, tileSize);
+}
+
+void Player::resolve_ground_collision(const Tilemap &tilemap, int tileSize)
+{
+    const std::optional<GlobalTileCoord> touchingGround = touching_ground(tilemap, tileSize);
+
+    if (!touchingGround)
+        return;
+
+    if (velocity.y >= 0.0f)
+    {
+        const Rectangle rec = get_rec();
+        const Vector2 tilePos = tile_to_point(*touchingGround, tileSize);
+
+        velocity.y = 0.0f;
+
+        position.y = tilePos.y - rec.height;
+    }
 }
 } // namespace rotm

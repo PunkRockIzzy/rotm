@@ -15,9 +15,14 @@ class Game final : public CoreModule
     void update() override;
     void draw() override;
 
-  private: /* Methods */
-    void update_player();
+  public:
+    struct Constants
+    {
+        static constexpr float GRAVITY = 1000.0f;
+        static constexpr float JUMP_FORCE = 500.0f;
+    };
 
+  private: /* Methods */
     void update_camera();
     static Vector2 get_camera_offset();
 
