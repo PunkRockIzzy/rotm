@@ -429,6 +429,8 @@ void Editor::begin_init_stress_test()
 void Editor::end_init_stress_test()
 {
     m_scene->tilemap = m_stressTestJob.get();
+    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
+    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
 }
 
 bool Editor::is_init_stress_test_in_progress()
@@ -603,6 +605,9 @@ void Editor::use_tool_at(const GlobalTileCoord &coord)
         tool_eraser(coord);
         break;
     }
+
+    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
+    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
 }
 
 void Editor::tool_pencil(const GlobalTileCoord &coord)
@@ -1326,13 +1331,12 @@ void Editor::window_stats()
 
     if (m_scene)
     {
-        const Tilemap &tilemap = m_scene->tilemap;
         const TilemapRenderer &tilemapRenderer = m_scene->render.tilemap;
 
         ImGui::SeparatorText("Tilemap");
 
-        ImGui::Text("%zu tiles", tilemap.get_tile_count());
-        ImGui::Text("%zu chunks", tilemap.get_chunk_count());
+        ImGui::Text("%zu tiles", m_windowStats.tileCountLastEdit);
+        ImGui::Text("%zu chunks", m_windowStats.chunkCountLastEdit);
 
         ImGui::SeparatorText("Render");
 
