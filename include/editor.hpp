@@ -128,6 +128,58 @@ class Editor final : public CoreModule
         std::size_t m_cursor = 0;
     };
 
+    // Holds variables related to the stats window.
+    struct GuiWindowStats
+    {
+        // Should the stats window be shown?
+        bool active = false;
+        // Number of tiles in tilemap when it was last edited.
+        std::size_t tileCountLastEdit = 0;
+        // Number of chunks in tilemap when it was last edited.
+        std::size_t chunkCountLastEdit = 0;
+    };
+
+    // Holds variables related to the log window.
+    struct GuiWindowLog
+    {
+        // Should the log window be shown?
+        bool active = false;
+        // Should the log messages be color-coded based on level?
+        bool showColors = true;
+        // Should we use a larger font size for text in this window?
+        bool useLargeFont = false;
+        // What log levels should be shown in the window?
+        std::array<bool, std::to_underlying(Logger::Level::Count)> showLevels = {
+            false, // All (not a real log level)
+            false, // Debug (ignored to avoid spam)
+            true,  // Info
+            true,  // Warning
+            true,  // Error
+            false  // None (not a real log level)
+        };
+    };
+
+    // Holds variables related to the scene editor.
+    struct GuiWindowSceneEditor
+    {
+        // Tile that the mouse is currently hovering.
+        GlobalTileCoord mouseTile = {{0, 0}, {0, 0}};
+        // Tile that the mouse was hovering last frame.
+        GlobalTileCoord mouseTilePrevious = mouseTile;
+
+        // Tile data to be placed by the Pencil edit tool.
+        TileData tileToPlace = {.id = 0};
+        // Number of tiles to place horizontally when Pencil is used.
+        int pencilTileWidth = 1;
+        // Number of tiles to place vertically when Pencil is used.
+        int pencilTileHeight = 1;
+
+        // Number of tiles to remove horizontally when Eraser is used.
+        int eraserTileWidth = 1;
+        // Number of tiles to remove vertically when Eraser is used.
+        int eraserTileHeight = 1;
+    };
+
   private: /* Methods */
     void cfg_update();
     void cfg_apply();
@@ -234,73 +286,70 @@ class Editor final : public CoreModule
     std::future<Tilemap> m_stressTestJob;
 
     // GUI
+
+    // Is the scene view camera being dragged by the mouse?
     bool m_draggingCamera = false;
 
+    // Holds name of active scene in scene editor, used by load/save scene.
     std::string m_sceneName = SCENE_NAME_DEFAULT;
+    // Holds text for scene name input box.
     std::string m_sceneNameInput = m_sceneName;
+    // Has the scene had edits since the last time we saved?
     bool m_sceneUnsavedChanges = false;
+    // Was this a new scene that hasn't already been saved?
     bool m_sceneNeverSaved = false;
+    // Are we allowed to make edits to the scene right now?
     bool m_sceneEditEnabled = false;
 
+    // Should the enter tileset name dialog open this frame?
     bool m_openEnterTilesetName = false;
+    // Should the configure tile size dialog open this frame?
     bool m_openConfigureTileSize = false;
+    // Should the configure usable tiles dialog open this frame?
     bool m_openConfigureUsableTiles = false;
+    // Should the initializing stress test popup open this frame?
     bool m_openInitStressTest = false;
 
+    // Should the load scene dialog open this frame?
     bool m_openLoadScene = false;
+    // List of saved scenes in scenes directory.
     std::vector<std::filesystem::path> m_loadableScenes;
+    // Holds error message from scene loading process.
     std::string m_sceneLoadErr;
 
+    // Should the save scene dialog open this frame?
     bool m_openSaveScene = false;
+    // Holds error message from scene saving process.
     std::string m_sceneSaveErr;
 
+    // Holds filename of loaded tileset. Used by load_tileset_atlas.
     std::string m_tilesetFilename = TILESET_FILENAME_DEFAULT;
+    // Holds text for tileset filename input box.
     std::string m_tilesetFilenameInput = m_tilesetFilename;
+    // Tileset texture for use in configuration. Passed on to m_scene->tileset on scene init.
     std::shared_ptr<TextureResource> m_tilesetAtlas;
+    // Holds error message from tileset loading process.
     std::string m_tilesetLoadErr;
+    // Tile size slider state.
     int m_tileSizeInput = TILE_SIZE_INPUT_DEFAULT;
+    // Holds input for usable tile selection dialog.
     std::vector<bool> m_usableTilesInput;
 
+    // Should the unsaved scene dialog open this frame?
     bool m_openUnsavedScene = false;
+    // Has the unsaved scene dialog initiated a save?
     bool m_unsavedSceneBeganSave = false;
+    // Holds a callback which is executed when the unsaved scene dialog either finishes saving or discards the current
+    // scene.
     std::function<void()> m_unsavedSceneCallback;
 
-    struct GuiWindowSceneEditor
-    {
-        GlobalTileCoord mouseTile = {{0, 0}, {0, 0}};
-        GlobalTileCoord mouseTilePrevious = mouseTile;
-        TileData tileToPlace = {.id = 0};
+    // Holds variables related to the scene editor.
+    GuiWindowSceneEditor m_windowSceneEditor;
 
-        int pencilTileWidth = 1;
-        int pencilTileHeight = 1;
+    // Holds variables related to the stats window.
+    GuiWindowStats m_windowStats;
 
-        int eraserTileWidth = 1;
-        int eraserTileHeight = 1;
-    } m_windowSceneEditor;
-
-    struct GuiChildTilePalette
-    {
-        bool selecting = false;
-    } m_tilePalette;
-
-    struct GuiWindowStats
-    {
-        bool active = false;
-    } m_windowStats;
-
-    struct GuiWindowLog
-    {
-        bool active = false;
-        bool showColors = true;
-        bool useLargeFont = false;
-        std::array<bool, std::to_underlying(Logger::Level::Count)> showLevels = {
-            false, // All (not a real log level)
-            false, // Debug (ignored to avoid spam)
-            true,  // Info
-            true,  // Warning
-            true,  // Error
-            false  // None (not a real log level)
-        };
-    } m_windowLog;
+    // Holds variables related to the log window.
+    GuiWindowLog m_windowLog;
 };
 } // namespace rotm
