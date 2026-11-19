@@ -449,6 +449,18 @@ void Editor::save_scene()
     begin_save_scene();
 }
 
+void Editor::switch_to_game()
+{
+    try
+    {
+        core.request_module_transition(std::make_unique<Game>(core));
+    }
+    catch (const exception::Base &e)
+    {
+        logger.print_error()("Failed to switch to game module.");
+    }
+}
+
 bool Editor::load_tileset_atlas()
 {
     try
@@ -558,12 +570,13 @@ void Editor::handle_shortcuts()
                 if (m_sceneUnsavedChanges)
                 {
                     m_openUnsavedScene = true;
-                    m_unsavedSceneCallback = [this]() -> void {
-                        core.request_module_transition(std::make_unique<Game>(core));
-                    };
+                    m_unsavedSceneCallback = [this]() -> void { switch_to_game(); };
                 }
                 else
-                    core.request_module_transition(std::make_unique<Game>(core));
+                {
+                    switch_to_game();
+                }
+
                 break;
             }
         }

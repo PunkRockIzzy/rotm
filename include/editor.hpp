@@ -208,6 +208,8 @@ class Editor final : public CoreModule
     void save_scene();
     // bool load_scene();
 
+    void switch_to_game();
+
     bool load_tileset_atlas();
 
     void handle_shortcuts();
