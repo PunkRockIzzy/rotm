@@ -33,8 +33,8 @@ For Linux:
   - Run the following command to install the build-essential package: ```sudo apt install build-essential```. Enter password when prompted.
   - Run the following command to install raylib's dependencies: ```sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev```
 
-Navigate to the project directory in your terminal and run ```make MODE=release```. Other modes: debug, profile (Tracy support)
+Navigate to the project directory in your terminal and run ```make```.
 
-To speed up compilation, you can call ```make -jx```, where x is the number of threads that your computer supports.
+To speed up compilation, you can call ```make -jX```, where X is the number of threads that your computer supports.
 
-To run the application, execute ```./bin/[MODE]/rotm.exe``` or ```make run MODE=[MODE]```.
+To run the application, execute ```make run```.
