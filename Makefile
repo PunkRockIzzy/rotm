@@ -11,11 +11,10 @@ INCLUDEDIR := include
 
 MODE ?= debug
 
-# apt does not provide g++ 16+, install via homebrew
 ifeq ($(HOST_OS),WIN32)
 	CXX := g++
 else ifeq ($(HOST_OS),LINUX)
-	CXX := g++-16
+	CXX := g++
 endif
 
 OBJDIR := obj/$(MODE)
