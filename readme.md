@@ -13,9 +13,9 @@ Features
 
 Compilation
 -----------
-Currently only supports MSYS2 UCRT64 toolchain for Windows.
+Supports Windows (MSYS2 UCRT64 gcc) and X11-based Linux desktops.
 
-Requires GCC 16+ and GNU Make. All external code is built at compilation time and linked to the final executable.
+Requires GCC and GNU Make. All external code is built at compilation time and linked to the final executable.
 
 Navigate to the project directory and run ```mingw32-make MODE=release```. Other modes: debug, profile (Tracy support)
 
