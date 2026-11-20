@@ -9,7 +9,6 @@
 #include "serialize_tileset.hpp"
 #include "tilemap.hpp"
 
-#include <array>
 #include <expected>
 #include <functional>
 #include <future>
@@ -17,7 +16,6 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
-#include <utility>
 
 #include <imgui.h>
 #include <raylib.h>
@@ -44,7 +42,6 @@ class Editor final : public CoreModule
     static constexpr float SCENE_VIEW_CAM_ZOOM_MIN = 1.0f;
     static constexpr float SCENE_VIEW_CAM_ZOOM_MAX = 10.0f;
 
-    static constexpr ImVec2 GUI_LOG_SIZE_DEFAULT = {640.0f, 480.0f};
     static constexpr float GUI_CONFIGURE_TILESET_TEX_SCALE = 4.0f;
 
     static constexpr Color BG_COLOR = {16, 16, 16, 255};
@@ -139,26 +136,6 @@ class Editor final : public CoreModule
         std::size_t chunkCountLastEdit = 0;
     };
 
-    // Holds variables related to the log window.
-    struct GuiWindowLog
-    {
-        // Should the log window be shown?
-        bool active = false;
-        // Should the log messages be color-coded based on level?
-        bool showColors = true;
-        // Should we use a larger font size for text in this window?
-        bool useLargeFont = false;
-        // What log levels should be shown in the window?
-        std::array<bool, std::to_underlying(Logger::Level::Count)> showLevels = {
-            false, // All (not a real log level)
-            false, // Debug (ignored to avoid spam)
-            true,  // Info
-            true,  // Warning
-            true,  // Error
-            false  // None (not a real log level)
-        };
-    };
-
     // Holds variables related to the scene editor.
     struct GuiWindowSceneEditor
     {
@@ -246,10 +223,6 @@ class Editor final : public CoreModule
 
     void window_stats();
     void window_stats_refresh_tile_count();
-
-    void window_log();
-    void window_log_menubar();
-    void window_log_table();
 
     // void popup_new();
     void popup_enter_tileset_name();
@@ -352,8 +325,5 @@ class Editor final : public CoreModule
 
     // Holds variables related to the stats window.
     GuiWindowStats m_windowStats;
-
-    // Holds variables related to the log window.
-    GuiWindowLog m_windowLog;
 };
 } // namespace rotm
