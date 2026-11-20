@@ -18,5 +18,6 @@ class Player final : public SpriteActor
 
   private:
     void resolve_ground_collision(const Tilemap &tilemap, int tileSize);
+    void resolve_ceiling_collision(const Tilemap &tilemap, int tileSize);
 };
 } // namespace rotm

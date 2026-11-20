@@ -6,6 +6,7 @@
 #include "tilemap.hpp"
 
 // #include <cmath>
+#include <cmath>
 #include <memory>
 #include <optional>
 
@@ -135,6 +136,24 @@ class SpriteActor : public Actor
         return {rec.x + (rec.width * 0.5f), rec.y + (rec.height * 0.5f)};
     }
 
+    virtual Vector2 top_left_point(Vector2 pos) const
+    {
+        ZoneScopedN("SpriteActor::top_left_point");
+
+        const Rectangle rec = get_rec(pos);
+
+        return {rec.x, rec.y};
+    }
+
+    virtual Vector2 top_right_point(Vector2 pos) const
+    {
+        ZoneScopedN("SpriteActor::top_right_point");
+
+        const Rectangle rec = get_rec(pos);
+
+        return {rec.x + rec.width, rec.y};
+    }
+
     virtual Vector2 bottom_left_point(Vector2 pos) const
     {
         ZoneScopedN("SpriteActor::bottom_left_point");
@@ -167,37 +186,86 @@ class SpriteActor : public Actor
         return std::nullopt;
     }
 
-    virtual std::optional<GlobalTileCoord> touching_ground(const Tilemap &tilemap, int tileSize) const
+    virtual std::optional<GlobalTileCoord> check_surface_collision(Vector2 pos, Vector2 posLast, const Tilemap &tilemap,
+                                                                   int tileSize) const
     {
-        ZoneScopedN("SpriteActor::touching_ground");
+        static constexpr std::size_t SUBDIVISIONS = 20;
+        static constexpr double LERP_INCREMENT = 1.0 / static_cast<double>(SUBDIVISIONS);
 
-        const Vector2 leftPoint = bottom_left_point(position);
-        const Vector2 rightPoint = bottom_right_point(position);
-        const Vector2 leftPointLast = bottom_left_point(m_lastPosition);
-        const Vector2 rightPointLast = bottom_right_point(m_lastPosition);
+        ZoneScopedN("SpriteActor::check_surface_collision");
 
-        std::vector<Vector2> testPoints{std::size_t{8}};
+        std::vector<Vector2> testPoints;
+        testPoints.reserve(SUBDIVISIONS);
 
-        for (float lerp = 0.0f; lerp <= 1.0f; lerp += 0.05f)
+        for (float lerp = 0.0f; lerp <= 1.0f; lerp += LERP_INCREMENT)
         {
-            Vector2 testPointLeft = Vector2Lerp(leftPointLast, leftPoint, lerp);
-            Vector2 testPointRight = Vector2Lerp(rightPointLast, rightPoint, lerp);
-            testPointLeft.x += CORNER_INSET;
-            testPointLeft.y += PROBE_DIST;
-            testPointRight.x -= CORNER_INSET;
-            testPointRight.y += PROBE_DIST;
+            const float x = std::lerp(posLast.x, pos.x, lerp);
+            const float y = std::lerp(posLast.y, pos.y, lerp);
 
-            testPoints.emplace_back(std::move(testPointLeft));
-            testPoints.emplace_back(std::move(testPointRight));
+            testPoints.emplace_back(x, y);
         }
 
         for (const Vector2 &testPoint : testPoints)
         {
-            std::optional result = check_tile_collision(testPoint, tilemap, tileSize);
+            std::optional<GlobalTileCoord> result = check_tile_collision(testPoint, tilemap, tileSize);
 
             if (result)
                 return result;
         }
+
+        return std::nullopt;
+    }
+
+    virtual std::optional<GlobalTileCoord> touching_ground(const Tilemap &tilemap, int tileSize) const
+    {
+        ZoneScopedN("SpriteActor::touching_ground");
+
+        Vector2 leftPoint = bottom_left_point(position);
+        Vector2 leftPointLast = bottom_left_point(m_lastPosition);
+        leftPoint.x += CORNER_INSET;
+        leftPointLast.x += CORNER_INSET;
+        leftPoint.y += PROBE_DIST;
+        leftPointLast.y += PROBE_DIST;
+
+        if (auto leftResult = check_surface_collision(leftPoint, leftPointLast, tilemap, tileSize))
+            return leftResult;
+
+        Vector2 rightPoint = bottom_right_point(position);
+        Vector2 rightPointLast = bottom_right_point(m_lastPosition);
+        rightPoint.x -= CORNER_INSET;
+        rightPointLast.x -= CORNER_INSET;
+        rightPoint.y += PROBE_DIST;
+        rightPointLast.y += PROBE_DIST;
+
+        if (auto rightResult = check_surface_collision(rightPoint, rightPointLast, tilemap, tileSize))
+            return rightResult;
+
+        return std::nullopt;
+    }
+
+    virtual std::optional<GlobalTileCoord> touching_ceiling(const Tilemap &tilemap, int tileSize)
+    {
+        ZoneScopedN("SpriteActor::touching_ceiling");
+
+        Vector2 leftPoint = top_left_point(position);
+        Vector2 leftPointLast = top_left_point(m_lastPosition);
+        leftPoint.x += CORNER_INSET;
+        leftPointLast.x += CORNER_INSET;
+        leftPoint.y -= PROBE_DIST;
+        leftPointLast.y -= PROBE_DIST;
+
+        if (auto leftResult = check_surface_collision(leftPoint, leftPointLast, tilemap, tileSize))
+            return leftResult;
+
+        Vector2 rightPoint = top_right_point(position);
+        Vector2 rightPointLast = top_right_point(m_lastPosition);
+        rightPoint.x -= CORNER_INSET;
+        rightPointLast.x -= CORNER_INSET;
+        rightPoint.y -= PROBE_DIST;
+        rightPointLast.y -= PROBE_DIST;
+
+        if (auto rightResult = check_surface_collision(rightPoint, rightPointLast, tilemap, tileSize))
+            return rightResult;
 
         return std::nullopt;
     }

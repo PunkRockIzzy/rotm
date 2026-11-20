@@ -50,6 +50,7 @@ void Player::update(double deltaTime, const Tilemap &tilemap, int tileSize)
     SpriteActor::update(deltaTime, tilemap, tileSize);
 
     resolve_ground_collision(tilemap, tileSize);
+    resolve_ceiling_collision(tilemap, tileSize);
 }
 
 void Player::resolve_ground_collision(const Tilemap &tilemap, int tileSize)
@@ -67,6 +68,22 @@ void Player::resolve_ground_collision(const Tilemap &tilemap, int tileSize)
         velocity.y = 0.0f;
 
         position.y = tilePos.y - rec.height;
+    }
+}
+
+void Player::resolve_ceiling_collision(const Tilemap &tilemap, int tileSize)
+{
+    const std::optional<GlobalTileCoord> touchingCeiling = touching_ceiling(tilemap, tileSize);
+
+    if (!touchingCeiling)
+        return;
+
+    if (velocity.y <= 0.0f)
+    {
+        const Vector2 tilePos = tile_to_point(*touchingCeiling, tileSize);
+
+        velocity.y = 0.0f;
+        position.y = tilePos.y + static_cast<float>(tileSize);
     }
 }
 } // namespace rotm
