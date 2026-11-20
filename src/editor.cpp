@@ -606,9 +606,6 @@ void Editor::use_tool_at(const GlobalTileCoord &coord)
         tool_eraser(coord);
         break;
     }
-
-    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
-    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
 }
 
 void Editor::tool_pencil(const GlobalTileCoord &coord)
@@ -664,6 +661,18 @@ void Editor::record_tile_edit(const GlobalTileCoord &position, const TileData &p
     m_currentCommand->edits.emplace_back(position, previous, replacement);
 
     m_currentEditIndices.emplace(position, idx);
+}
+
+void Editor::commit_tile_edit()
+{
+    m_currentCommand->apply(m_scene->tilemap);
+    m_editHistory.push(std::move(*m_currentCommand));
+    m_currentCommand.reset();
+    m_currentEditIndices.clear();
+    m_sceneUnsavedChanges = true;
+
+    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
+    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
 }
 
 void Editor::undo()
@@ -1138,11 +1147,7 @@ void Editor::window_scene_editor_handle_input()
         }
         else
         {
-            m_currentCommand->apply(m_scene->tilemap);
-            m_editHistory.push(std::move(*m_currentCommand));
-            m_currentCommand.reset();
-            m_currentEditIndices.clear();
-            m_sceneUnsavedChanges = true;
+            commit_tile_edit();
         }
     }
 

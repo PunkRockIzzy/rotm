@@ -218,6 +218,7 @@ class Editor final : public CoreModule
     void tool_eraser(const GlobalTileCoord &coord);
 
     void record_tile_edit(const GlobalTileCoord &position, const TileData &previous, const TileData &replacement);
+    void commit_tile_edit();
 
     void undo();
     void redo();
