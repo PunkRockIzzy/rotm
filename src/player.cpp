@@ -3,6 +3,7 @@
 #include "tile_math.hpp"
 #include "tilemap.hpp"
 
+#include <algorithm>
 #include <memory>
 
 #include <raylib.h>
@@ -43,6 +44,7 @@ void Player::update(double deltaTime, const Tilemap &tilemap, int tileSize)
     else
     {
         velocity.y += Game::Constants::GRAVITY * deltaTime;
+        velocity.y = std::min(velocity.y, Game::Constants::TERMINAL_VELOCITY);
     }
 
     SpriteActor::update(deltaTime, tilemap, tileSize);
