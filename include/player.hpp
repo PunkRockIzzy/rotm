@@ -4,7 +4,6 @@
 #include "tilemap.hpp"
 
 #include <memory>
-#include <optional>
 
 namespace rotm
 {
@@ -19,5 +18,7 @@ class Player final : public SpriteActor
   private:
     void resolve_ground_collision(const Tilemap &tilemap, int tileSize);
     void resolve_ceiling_collision(const Tilemap &tilemap, int tileSize);
+    void resolve_leftwall_collision(const Tilemap &tilemap, int tileSize);
+    void resolve_rightwall_collision(const Tilemap &tilemap, int tileSize);
 };
 } // namespace rotm

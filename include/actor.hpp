@@ -50,11 +50,20 @@ class Actor
         ZoneScopedN("Actor::update");
 
         // suppress compiler warning
+        (void)deltaTime;
         (void)tilemap;
         (void)tileSize;
 
         m_lastPosition = position;
+    }
+
+    virtual void apply_velocity_x(double deltaTime)
+    {
         position.x += velocity.x * deltaTime;
+    }
+
+    virtual void apply_velocity_y(double deltaTime)
+    {
         position.y += velocity.y * deltaTime;
     }
 
@@ -265,6 +274,60 @@ class SpriteActor : public Actor
         rightPointLast.y -= PROBE_DIST;
 
         if (auto rightResult = check_surface_collision(rightPoint, rightPointLast, tilemap, tileSize))
+            return rightResult;
+
+        return std::nullopt;
+    }
+
+    virtual std::optional<GlobalTileCoord> touching_leftwall(const Tilemap &tilemap, int tileSize)
+    {
+        ZoneScopedN("SpriteActor::touching_leftwall");
+
+        Vector2 topPoint = top_left_point(position);
+        Vector2 topPointLast = top_left_point(m_lastPosition);
+        topPoint.x -= PROBE_DIST;
+        topPointLast.x -= PROBE_DIST;
+        topPoint.y += CORNER_INSET;
+        topPointLast.y += CORNER_INSET;
+
+        if (auto topResult = check_surface_collision(topPoint, topPointLast, tilemap, tileSize))
+            return topResult;
+
+        Vector2 bottomPoint = bottom_left_point(position);
+        Vector2 bottomPointLast = bottom_left_point(m_lastPosition);
+        bottomPoint.x -= PROBE_DIST;
+        bottomPointLast.x -= PROBE_DIST;
+        bottomPoint.y -= CORNER_INSET;
+        bottomPointLast.y -= CORNER_INSET;
+
+        if (auto bottomResult = check_surface_collision(bottomPoint, bottomPointLast, tilemap, tileSize))
+            return bottomResult;
+
+        return std::nullopt;
+    }
+
+    virtual std::optional<GlobalTileCoord> touching_rightwall(const Tilemap &tilemap, int tileSize)
+    {
+        ZoneScopedN("SpriteActor::touching_rightwall");
+
+        Vector2 topPoint = top_right_point(position);
+        Vector2 topPointLast = top_right_point(m_lastPosition);
+        topPoint.x += PROBE_DIST;
+        topPointLast.x += PROBE_DIST;
+        topPoint.y += CORNER_INSET;
+        topPointLast.y += CORNER_INSET;
+
+        if (auto leftResult = check_surface_collision(topPoint, topPointLast, tilemap, tileSize))
+            return leftResult;
+
+        Vector2 bottomPoint = bottom_right_point(position);
+        Vector2 bottomPointLast = bottom_right_point(m_lastPosition);
+        bottomPoint.x += PROBE_DIST;
+        bottomPointLast.x += PROBE_DIST;
+        bottomPoint.y -= CORNER_INSET;
+        bottomPointLast.y -= CORNER_INSET;
+
+        if (auto rightResult = check_surface_collision(bottomPoint, bottomPointLast, tilemap, tileSize))
             return rightResult;
 
         return std::nullopt;
