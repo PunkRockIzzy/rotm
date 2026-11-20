@@ -20,7 +20,7 @@ class Game final : public CoreModule
     {
         static constexpr float GRAVITY = 1000.0f;
         static constexpr float TERMINAL_VELOCITY = 500.0f;
-        static constexpr float JUMP_FORCE = 500.0f;
+        static constexpr float JUMP_FORCE = 300.0f;
     };
 
   private: /* Methods */
