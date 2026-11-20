@@ -61,7 +61,7 @@ void Player::resolve_ground_collision(const Tilemap &tilemap, int tileSize)
 
     if (velocity.y >= 0.0f)
     {
-        const Rectangle rec = get_rec();
+        const Rectangle rec = get_rec(position);
         const Vector2 tilePos = tile_to_point(*touchingGround, tileSize);
 
         velocity.y = 0.0f;

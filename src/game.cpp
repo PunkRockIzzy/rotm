@@ -27,11 +27,10 @@ Game::Game(Core &coreRef)
 
     Camera2D &cam = m_scene->camera;
 
-    cam.offset = get_camera_offset();
-    cam.target = m_player.center_point();
     cam.rotation = 0.0f;
-
     cam.zoom = 4.0f;
+
+    update_camera();
 }
 
 Game::~Game()
@@ -79,12 +78,14 @@ void Game::draw()
     m_player.draw();
 
     EndMode2D();
+
+    DrawText(TextFormat("%i", core.get_fps()), 10, 10, 20, Fade(WHITE, 0.25f));
 }
 
 void Game::update_camera()
 {
     m_scene->camera.offset = get_camera_offset();
-    m_scene->camera.target = m_player.center_point();
+    m_scene->camera.target = m_player.center_point(m_player.position);
 }
 
 Vector2 Game::get_camera_offset()
