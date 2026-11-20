@@ -7,6 +7,7 @@
 #include "time.hpp"
 #include "version.hpp"
 
+#include <deque>
 #include <format>
 #include <memory>
 #include <string>
@@ -66,6 +67,11 @@ class Core
         return m_fps;
     }
 
+    void set_target_fps(int targetFPS)
+    {
+        m_raylibConfig.targetFPS = targetFPS;
+    }
+
     bool get_show_fps_counter() const
     {
         return m_showFPSCounter;
@@ -76,19 +82,20 @@ class Core
         m_showFPSCounter = enabled;
     }
 
-    GuiContext &get_gui_context()
-    {
-        return *m_guiContext;
-    }
-
     const RaylibConfig &get_raylib_config() const
     {
         return m_raylibConfig;
     }
 
+    void request_module_transition(std::unique_ptr<CoreModule> &&module)
+    {
+        m_moduleQueued = std::move(module);
+    }
+
   private: /* Static properties */
     static constexpr double SECONDS_PER_TICK = 1.0 / static_cast<double>(TICKS_PER_SECOND);
     static constexpr int MAX_TICKS_PER_FRAME = 4;
+    static constexpr std::size_t DELTA_HISTORY_MAX = 100;
 
   private: /* Methods */
     void update();
@@ -96,6 +103,8 @@ class Core
     void draw();
 
     bool do_tick() const;
+
+    void wait_for_next_frame();
 
     void parse_args(int argc, char *argv[]);
     void init_raylib();
@@ -105,7 +114,8 @@ class Core
     void handle_exception_run();
     void handle_exception_shutdown();
 
-    double calculate_delta_time();
+    double calculate_delta_time() const;
+    int calculate_fps() const;
 
     std::string generate_screenshot_filename();
 
@@ -116,21 +126,23 @@ class Core
     bool m_devMode = false;
 
     double m_deltaTime = 0.0;
+    std::deque<double> m_deltaHistory;
+    double m_deltaHistorySum = 0.0;
 
     int m_fps = 0;
-    unsigned long long m_frameCountPastSecond = 0;
     bool m_showFPSCounter = false;
 
     double m_secondsSinceTick = 0.0;
     unsigned long long m_tickCount = 0;
 
+    std::size_t m_busyCounter = 0;
+
     int m_lastWindowWidth = 0;
     int m_lastWindowHeight = 0;
     bool m_isFullscreen = false;
 
-    std::unique_ptr<GuiContext> m_guiContext;
-
     std::unique_ptr<CoreModule> m_moduleActive;
+    std::unique_ptr<CoreModule> m_moduleQueued;
 
     bool m_wantExit = false;
     RaylibConfig m_raylibConfig = RaylibConfig{};
@@ -138,5 +150,6 @@ class Core
   public: /* Fields */
     Logger logger;
     ResourceManager resources;
+    std::unique_ptr<GuiContext> guiContext;
 };
 } // namespace rotm

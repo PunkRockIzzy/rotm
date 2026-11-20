@@ -3,7 +3,6 @@
 /bin
 /obj
 /utilities
-compile_commands.json
-*.ini
-*.bat
-*.png
+/compile_commands.json
+/*.ini
+/*.bat

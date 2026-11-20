@@ -1,6 +1,7 @@
 #include "editor.hpp"
 #include "core.hpp"
 #include "exception.hpp"
+#include "game.hpp"
 #include "gui_context.hpp"
 #include "logger.hpp"
 #include "renderer_tilemap.hpp"
@@ -17,7 +18,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <deque>
 #include <expected>
 #include <filesystem>
 #include <format>
@@ -27,7 +27,6 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -60,8 +59,8 @@ Editor::Editor(Core &coreRef) : CoreModule(coreRef), logger(core.logger), resour
 
         m_windowStats.active = true;
 
-        m_windowLog.active = true;
-        m_windowLog.showLevels[to_underlying(Debug)] = true;
+        core.guiContext->windowLog.active = true;
+        core.guiContext->windowLog.showLevels[to_underlying(Debug)] = true;
     }
 }
 
@@ -83,8 +82,16 @@ void Editor::update()
 
     if (WindowShouldClose())
     {
-        m_wantExit = true;
-        return;
+        if (m_sceneUnsavedChanges)
+        {
+            m_openUnsavedScene = true;
+            m_unsavedSceneCallback = [this]() -> void { m_wantExit = true; };
+        }
+        else
+        {
+            m_wantExit = true;
+            return;
+        }
     }
 
     if (m_saveJob.valid() && !is_save_in_progress())
@@ -129,7 +136,7 @@ void Editor::sync_gui()
     window_welcome();
     window_scene_editor();
     window_stats();
-    window_log();
+    core.guiContext->window_log();
 
     // popup_new();
     popup_enter_tileset_name();
@@ -138,6 +145,9 @@ void Editor::sync_gui()
 
     popup_open_scene();
     popup_save_scene();
+
+    popup_init_stress_test();
+    popup_unsaved_scene();
 
     ImGui::PopStyleColor(4);
 }
@@ -293,13 +303,21 @@ void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilema
     }
 
     write_tileset_metadata(m_scene->tileset, m_tilesetFilename);
+
+    window_stats_refresh_tile_count();
 }
 
 void Editor::destroy_scene()
 {
+    if (m_sceneUnsavedChanges)
+    {
+        m_openUnsavedScene = true;
+        m_unsavedSceneCallback = [this]() -> void { destroy_scene(); };
+        return;
+    }
+
     m_scene.reset();
     m_editHistory.clear();
-    m_sceneUnsavedChanges = false;
 }
 
 void Editor::begin_save_scene()
@@ -405,11 +423,14 @@ void Editor::begin_init_stress_test()
         out.stress_test();
         return out;
     });
+
+    m_openInitStressTest = true;
 }
 
 void Editor::end_init_stress_test()
 {
     m_scene->tilemap = m_stressTestJob.get();
+    window_stats_refresh_tile_count();
 }
 
 bool Editor::is_init_stress_test_in_progress()
@@ -428,6 +449,18 @@ void Editor::save_scene()
     }
 
     begin_save_scene();
+}
+
+void Editor::switch_to_game()
+{
+    try
+    {
+        core.request_module_transition(std::make_unique<Game>(core));
+    }
+    catch (const exception::Base &e)
+    {
+        logger.print_error()("Failed to switch to game module.");
+    }
 }
 
 bool Editor::load_tileset_atlas()
@@ -521,7 +554,7 @@ void Editor::handle_shortcuts()
             switch (keyPressed)
             {
             case KEY_GRAVE:
-                m_windowLog.active = !m_windowLog.active;
+                core.guiContext->windowLog.active = !core.guiContext->windowLog.active;
                 break;
 
             case KEY_F3:
@@ -532,7 +565,21 @@ void Editor::handle_shortcuts()
                 TilemapRenderer &renderer = m_scene->render.tilemap;
 
                 renderer.showChunkBorders = !renderer.showChunkBorders;
+
+                break;
             }
+            case KEY_HOME:
+                if (m_sceneUnsavedChanges)
+                {
+                    m_openUnsavedScene = true;
+                    m_unsavedSceneCallback = [this]() -> void { switch_to_game(); };
+                }
+                else
+                {
+                    switch_to_game();
+                }
+
+                break;
             }
         }
 
@@ -615,16 +662,32 @@ void Editor::record_tile_edit(const GlobalTileCoord &position, const TileData &p
     m_currentEditIndices.emplace(position, idx);
 }
 
+void Editor::commit_tile_edit()
+{
+    m_currentCommand->apply(m_scene->tilemap);
+    m_editHistory.push(std::move(*m_currentCommand));
+    m_currentCommand.reset();
+    m_currentEditIndices.clear();
+
+    m_sceneUnsavedChanges = true;
+
+    window_stats_refresh_tile_count();
+}
+
 void Editor::undo()
 {
     m_editHistory.undo(m_scene->tilemap);
     m_sceneUnsavedChanges = true;
+
+    window_stats_refresh_tile_count();
 }
 
 void Editor::redo()
 {
     m_editHistory.redo(m_scene->tilemap);
     m_sceneUnsavedChanges = true;
+
+    window_stats_refresh_tile_count();
 }
 
 void Editor::draw_tile_cursor()
@@ -843,7 +906,15 @@ void Editor::main_menu_bar()
         }
         else if (clickedExit)
         {
-            m_wantExit = true;
+            if (m_sceneUnsavedChanges)
+            {
+                m_openUnsavedScene = true;
+                m_unsavedSceneCallback = [this]() { m_wantExit = true; };
+            }
+            else
+            {
+                m_wantExit = true;
+            }
         }
 
         ImGui::EndMenu();
@@ -1079,11 +1150,7 @@ void Editor::window_scene_editor_handle_input()
         }
         else
         {
-            m_currentCommand->apply(m_scene->tilemap);
-            m_editHistory.push(std::move(*m_currentCommand));
-            m_currentCommand.reset();
-            m_currentEditIndices.clear();
-            m_sceneUnsavedChanges = true;
+            commit_tile_edit();
         }
     }
 
@@ -1281,13 +1348,12 @@ void Editor::window_stats()
 
     if (m_scene)
     {
-        const Tilemap &tilemap = m_scene->tilemap;
         const TilemapRenderer &tilemapRenderer = m_scene->render.tilemap;
 
         ImGui::SeparatorText("Tilemap");
 
-        ImGui::Text("%zu tiles", tilemap.get_tile_count());
-        ImGui::Text("%zu chunks", tilemap.get_chunk_count());
+        ImGui::Text("%zu tiles", m_windowStats.tileCountLastEdit);
+        ImGui::Text("%zu chunks", m_windowStats.chunkCountLastEdit);
 
         ImGui::SeparatorText("Render");
 
@@ -1298,180 +1364,10 @@ void Editor::window_stats()
     ImGui::End();
 }
 
-void Editor::window_log()
+void Editor::window_stats_refresh_tile_count()
 {
-    if (!m_windowLog.active)
-        return;
-
-    ImGui::SetNextWindowSize(GUI_LOG_SIZE_DEFAULT, ImGuiCond_FirstUseEver);
-
-    const bool visible = ImGui::Begin("Log", &m_windowLog.active, ImGuiWindowFlags_MenuBar);
-
-    if (!visible)
-        return ImGui::End();
-
-    const GuiContext &guiContext = core.get_gui_context();
-    const GuiContext::Fonts &fonts = guiContext.get_fonts();
-
-    window_log_menubar();
-
-    ImGui::PushFont(m_windowLog.useLargeFont ? fonts.monospace : fonts.monospaceSmall);
-    window_log_table();
-    ImGui::PopFont();
-
-    ImGui::End();
-}
-
-void Editor::window_log_menubar()
-{
-    using enum Logger::Level;
-    using std::to_underlying;
-
-    if (!ImGui::BeginMenuBar())
-        return;
-
-    if (ImGui::BeginMenu("View"))
-    {
-        // Flyout with log level toggles
-        if (ImGui::BeginMenu("Log levels"))
-        {
-            ImGui::Checkbox("Debug", &m_windowLog.showLevels[to_underlying(Debug)]);
-            ImGui::Checkbox("Info", &m_windowLog.showLevels[to_underlying(Info)]);
-            ImGui::Checkbox("Warning", &m_windowLog.showLevels[to_underlying(Warning)]);
-            ImGui::Checkbox("Error", &m_windowLog.showLevels[to_underlying(Error)]);
-            ImGui::EndMenu();
-        }
-
-        ImGui::Checkbox("Show colors", &m_windowLog.showColors);
-        ImGui::Checkbox("Use large font", &m_windowLog.useLargeFont);
-
-        ImGui::EndMenu();
-    }
-
-    ImGui::EndMenuBar();
-}
-
-void Editor::window_log_table()
-{
-    static constexpr ImColor bgDebug = {0.3f, 0.1f, 0.3f, 1.0f};
-    static constexpr ImColor bgDebugAlt = {0.35f, 0.15f, 0.35f, 1.0f};
-
-    static constexpr ImColor bgInfo = {0.05f, 0.25f, 0.25f, 1.0f};
-    static constexpr ImColor bgInfoAlt = {0.1f, 0.3f, 0.3f, 1.0f};
-
-    static constexpr ImColor bgWarning = {0.3f, 0.3f, 0.1f, 1.0f};
-    static constexpr ImColor bgWarningAlt = {0.35f, 0.35f, 0.15f, 1.0f};
-
-    static constexpr ImColor bgError = {0.3f, 0.1f, 0.1f, 1.0f};
-    static constexpr ImColor bgErrorAlt = {0.35f, 0.15f, 0.15f, 1.0f};
-
-    const std::deque<Logger::MsgData> &logHistory = logger.get_history();
-    const ImVec2 tableSize = ImGui::GetContentRegionAvail();
-
-    const bool show = ImGui::BeginTable("##log-table", 1, ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, tableSize);
-
-    if (!show)
-        return;
-
-    // Was the scroll bar at the bottom last frame?
-    const bool wasAtBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY();
-
-    const ImGuiStyle &style = ImGui::GetStyle();
-
-    // Height of log message list
-    float messagesHeight = 0.0f;
-
-    for (const auto &message : logHistory)
-    {
-        if (!m_windowLog.showLevels[std::to_underlying(message.level)])
-            continue;
-
-        // const float textHeight = ImGui::CalcTextSize(message.text.c_str()).y;
-        const float rowTextHeight = ImGui::GetTextLineHeight();
-
-        messagesHeight += rowTextHeight + style.CellPadding.y * 2.0f;
-    }
-
-    // Fill unused space above short histories so the newest message sits at the bottom.
-    const float topSpacerHeight = tableSize.y > messagesHeight ? tableSize.y - messagesHeight : 0.0f;
-
-    if (topSpacerHeight > 0.0f)
-    {
-        ImGui::TableNextRow(0, topSpacerHeight);
-        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImVec4{0.0f, 0.0f, 0.0f, 0.0f}));
-    }
-
-    // Use primary or secondary table BG color?
-    bool useAlternateBG = true;
-
-    // Show log messages (iterated in reverse, queue front is newest message).
-    for (auto it = logHistory.rbegin(); it != logHistory.rend(); ++it)
-    {
-        using enum Logger::Level;
-
-        const Logger::MsgData &message = *it;
-
-        // If we're ignoring this type of log message, skip this iteration.
-        if (!m_windowLog.showLevels[std::to_underlying(message.level)])
-            continue;
-
-        ImGui::TableNextRow();
-
-        if (m_windowLog.showColors)
-        {
-            // Alternate BG color per iteration.
-            useAlternateBG = !useAlternateBG;
-
-            // BG color for this row.
-            ImColor rowColor;
-
-            // Find BG color.
-            switch (message.level)
-            {
-            case Debug:
-                rowColor = useAlternateBG ? bgDebugAlt : bgDebug;
-                break;
-
-            case Warning:
-                rowColor = useAlternateBG ? bgWarningAlt : bgWarning;
-                break;
-
-            case Error:
-                rowColor = useAlternateBG ? bgErrorAlt : bgError;
-                break;
-
-            case Info:
-            default:
-                rowColor = useAlternateBG ? bgInfoAlt : bgInfo;
-                break;
-            }
-
-            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, rowColor);
-        }
-
-        // Select the table's first column so the following text is submitted to its cell.
-        ImGui::TableSetColumnIndex(0);
-        ImGui::TextUnformatted(message.text.c_str());
-
-        // Cleaned name of function that printed the message.
-        const std::string_view funcName = clean_function_name(message.location.function_name());
-
-        // Show tooltip with log metadata on hovering a message.
-        ImGui::SetItemTooltip("Level: %s\n"
-                              "Time: %02zi:%02zi:%02zi.%03zi\n"
-                              "Function: %.*s\n"
-                              "File: %s, line %u",
-                              Logger::level_to_string(message.level).data(), message.time.hours().count(),
-                              message.time.minutes().count(), message.time.seconds().count(),
-                              message.time.subseconds().count(), static_cast<int>(funcName.size()), funcName.data(),
-                              message.location.file_name(), message.location.line());
-    }
-
-    // If the scroll bar was at the bottom, autoscroll to the current bottom.
-    if (wasAtBottom)
-        ImGui::SetScrollHereY(1.0f);
-
-    ImGui::EndTable();
+    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
+    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
 }
 
 void Editor::popup_enter_tileset_name()
@@ -1946,6 +1842,85 @@ void Editor::popup_init_stress_test()
 
     if (!is_init_stress_test_in_progress())
         ImGui::CloseCurrentPopup();
+
+    ImGui::EndPopup();
+}
+
+void Editor::popup_unsaved_scene()
+{
+    if (m_openUnsavedScene)
+    {
+        ImGui::OpenPopup("Unsaved scene edits");
+        m_openUnsavedScene = false;
+    }
+
+    const bool active = ImGui::BeginPopupModal("Unsaved scene edits", nullptr,
+                                               ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+    if (!active)
+        return;
+
+    if (m_unsavedSceneBeganSave)
+    {
+        if (is_save_in_progress())
+        {
+            ImGui::TextUnformatted("Saving...");
+        }
+        else if (m_sceneSaveErr.empty())
+        {
+            ImGui::CloseCurrentPopup();
+            m_unsavedSceneBeganSave = false;
+            m_unsavedSceneCallback();
+            m_unsavedSceneCallback = nullptr;
+        }
+        else
+        {
+            ImGui::OpenPopup("Save failed");
+        }
+    }
+    else
+    {
+        ImGui::TextUnformatted("This scene has unsaved changes. Do you want to save?");
+
+        const bool pressedOK = ImGui::Button("Save");
+        ImGui::SameLine();
+        const bool pressedDontSave = ImGui::Button("Don't save");
+        ImGui::SameLine();
+        const bool pressedCancel = ImGui::Button("Cancel");
+
+        if (pressedOK)
+        {
+            m_unsavedSceneBeganSave = true;
+            begin_save_scene();
+        }
+        else if (pressedDontSave)
+        {
+            ImGui::CloseCurrentPopup();
+            m_sceneUnsavedChanges = false;
+            m_unsavedSceneCallback();
+            m_unsavedSceneCallback = nullptr;
+        }
+        else if (pressedCancel)
+        {
+            ImGui::CloseCurrentPopup();
+        }
+    }
+
+    const bool errorActive =
+        ImGui::BeginPopupModal("Save failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+    if (errorActive)
+    {
+        ImGui::Text("%s", m_sceneLoadErr.c_str());
+
+        if (ImGui::Button("OK"))
+        {
+            m_sceneLoadErr.clear();
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 
     ImGui::EndPopup();
 }

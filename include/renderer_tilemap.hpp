@@ -1,6 +1,5 @@
 #pragma once
 
-#include "logger.hpp"
 #include "tilemap.hpp"
 #include "tileset.hpp"
 #include "time.hpp"
