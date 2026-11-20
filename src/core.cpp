@@ -3,14 +3,17 @@
 #include "exception.hpp"
 // #include "game.hpp"
 #include "gui_context.hpp"
+#include "time.hpp"
 #include "version.hpp"
 
 #include <chrono>
 #include <cmath>
 #include <exception>
 #include <memory>
+#include <ratio>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #include <raylib.h>
@@ -73,6 +76,8 @@ void Core::run()
     {
         while (!m_wantExit)
         {
+            PollInputEvents();
+
             if (!m_moduleActive)
                 throw exception::NoActiveCoreModule();
 
@@ -83,9 +88,9 @@ void Core::run()
             }
 
             m_deltaTime = calculate_delta_time();
-            m_secondsSinceTick += m_deltaTime;
-
             m_timeLastFrame = time::Clock::now();
+
+            m_secondsSinceTick += m_deltaTime;
 
             update();
 
@@ -109,6 +114,10 @@ void Core::run()
             draw();
 
             ++m_frameCountPastSecond;
+
+            SwapScreenBuffer();
+
+            wait_for_next_frame();
 
             FrameMark;
         }
@@ -205,6 +214,30 @@ bool Core::do_tick() const
     return m_secondsSinceTick >= SECONDS_PER_TICK;
 }
 
+void Core::wait_for_next_frame()
+{
+    using namespace std::chrono;
+    using namespace std::chrono_literals;
+
+    static constexpr milliseconds SLEEP_MARGIN = 5ms;
+
+    const int &targetFPS = m_raylibConfig.targetFPS;
+
+    if (targetFPS == 0)
+        return;
+
+    const duration<double> targetFrameTime{1.0 / static_cast<double>(m_raylibConfig.targetFPS)};
+
+    const time::Point timeNextFrame = m_timeLastFrame + duration_cast<time::Duration>(targetFrameTime);
+
+    std::this_thread::sleep_until(timeNextFrame - SLEEP_MARGIN);
+
+    while (time::Clock::now() < timeNextFrame)
+    {
+        ++m_busyCounter;
+    }
+}
+
 bool read_int_arg(std::string_view arg, const std::string_view &argValue, int &target)
 {
     if (argValue.size() <= arg.size())
@@ -299,8 +332,8 @@ void Core::init_raylib()
     if (!IsWindowReady())
         throw exception::NoWindow();
 
-    logger.print_info()("Setting target FPS... ({})", m_raylibConfig.targetFPS);
-    SetTargetFPS(m_raylibConfig.targetFPS);
+    // logger.print_info()("Setting target FPS... ({})", m_raylibConfig.targetFPS);
+    // SetTargetFPS(m_raylibConfig.targetFPS);
 
     SetExitKey(KEY_NULL);
 }

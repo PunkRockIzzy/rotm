@@ -66,6 +66,11 @@ class Core
         return m_fps;
     }
 
+    void set_target_fps(int targetFPS)
+    {
+        m_raylibConfig.targetFPS = targetFPS;
+    }
+
     bool get_show_fps_counter() const
     {
         return m_showFPSCounter;
@@ -97,6 +102,8 @@ class Core
 
     bool do_tick() const;
 
+    void wait_for_next_frame();
+
     void parse_args(int argc, char *argv[]);
     void init_raylib();
     void shutdown_raylib();
@@ -123,6 +130,8 @@ class Core
 
     double m_secondsSinceTick = 0.0;
     unsigned long long m_tickCount = 0;
+
+    std::size_t m_busyCounter = 0;
 
     int m_lastWindowWidth = 0;
     int m_lastWindowHeight = 0;
