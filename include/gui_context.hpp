@@ -46,17 +46,40 @@ class GuiContext
     GuiContext(Core &coreRef);
     ~GuiContext();
 
+    /**
+     * @brief Initiate an ImGui frame and allow sending UI draw commands.
+     *
+     * @note Called from Core, do not touch!
+     */
     void begin_frame();
+    /**
+     * @brief Finish an ImGui frame and render queued UI draw commands to screen.
+     *
+     * @note Called from Core, do not touch!
+     */
     void end_frame();
 
+    /**
+     * @brief Draw window showing log message history.
+     *
+     */
     void window_log();
 
+    /**
+     * @brief Trivial getter for m_fonts.
+     *
+     * @return const Fonts& Data structure with UI fonts.
+     */
     const Fonts &get_fonts() const
     {
         return m_fonts;
     }
 
   public: /* Fields */
+    /**
+     * @brief Data pertaining to log window.
+     *
+     */
     WindowLog windowLog;
 
   private: /* Static properties */
