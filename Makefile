@@ -14,7 +14,15 @@ MODE ?= debug
 ifeq ($(HOST_OS),WIN32)
 	CXX := g++
 else ifeq ($(HOST_OS),LINUX)
-	CXX := g++
+	ifneq ($(shell which g++-16),)
+		CXX := g++-16
+	else ifneq ($(shell which g++-15),)
+		CXX := g++-15
+	else ifneq ($(shell which g++-14),)
+		CXX := g++-14
+	else
+		$(error No supported version of g++ installed. Try "sudo apt install gcc-16".)
+	endif
 endif
 
 OBJDIR := obj/$(MODE)
@@ -50,7 +58,11 @@ RLIMGUI_OBJS := $(patsubst $(RLIMGUI_SRCDIR)/%.cpp,$(RLIMGUI_OBJDIR)/%.o,$(RLIMG
 
 TRACY_SRCDIR := external/tracy/public
 TRACY_OBJDIR := $(OBJDIR)/tracy
-TRACY_OBJ := $(TRACY_OBJDIR)/TracyClient.o
+ifeq ($(MODE),profile)
+	TRACY_OBJ := $(TRACY_OBJDIR)/TracyClient.o
+else
+	TRACY_OBJ :=
+endif
 
 CXXFLAGS := -std=gnu++23 -MMD \
 -I$(INCLUDEDIR) \
@@ -62,15 +74,6 @@ CXXFLAGS := -std=gnu++23 -MMD \
 -Iexternal/mINI/src
 
 EXTERNAL_CXXFLAGS := -w $(CXXFLAGS)
-
-CXXFLAGS := -std=gnu++23 -MMD \
--I$(INCLUDEDIR) \
--I$(RAYLIB_SRCDIR) \
--I$(IMGUI_SRCDIR) \
--I$(RLIMGUI_SRCDIR) \
--I$(TRACY_SRCDIR) \
--Iexternal/imgui/misc/cpp \
--Iexternal/mINI/src
 
 WARNFLAGS := -Wall -Wextra -Wpedantic
 
@@ -90,6 +93,7 @@ ifeq ($(MODE),debug)
     BUILD_CXXFLAGS := $(CXXFLAGS_DEBUG)
 else ifeq ($(MODE),profile)
     BUILD_CXXFLAGS := $(CXXFLAGS_PROFILE)
+	EXTERNAL_CXXFLAGS += -DTRACY_ENABLE
 else ifeq ($(MODE),release)
     BUILD_CXXFLAGS := $(CXXFLAGS_RELEASE)
 else
@@ -137,7 +141,7 @@ $(RLIMGUI_OBJDIR)/%.o: $(RLIMGUI_SRCDIR)/%.cpp | $(RLIMGUI_OBJDIR)
 	$(CXX) $(EXTERNAL_CXXFLAGS) -c $< -o $@
 
 $(TRACY_OBJ): $(TRACY_SRCDIR)/TracyClient.cpp | $(TRACY_OBJDIR)
-	$(CXX) $(EXTERNAL_CXXFLAGS) -DTRACY_ENABLE -c $< -o $@
+	$(CXX) $(EXTERNAL_CXXFLAGS) -c $< -o $@
 
 $(OBJDIR) $(BINDIR) $(RAYLIB_OBJDIR) $(IMGUI_OBJDIR) $(RLIMGUI_OBJDIR) $(TRACY_OBJDIR):
 	mkdir$(EXE) -p $@
