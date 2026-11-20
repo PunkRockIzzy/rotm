@@ -680,12 +680,16 @@ void Editor::undo()
 {
     m_editHistory.undo(m_scene->tilemap);
     m_sceneUnsavedChanges = true;
+
+    window_stats_refresh_tile_count();
 }
 
 void Editor::redo()
 {
     m_editHistory.redo(m_scene->tilemap);
     m_sceneUnsavedChanges = true;
+
+    window_stats_refresh_tile_count();
 }
 
 void Editor::draw_tile_cursor()
