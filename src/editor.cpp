@@ -2044,12 +2044,16 @@ void Editor::popup_unsaved_scene()
         {
             ImGui::TextUnformatted("Saving...");
         }
-        else
+        else if (m_sceneSaveErr.empty())
         {
             ImGui::CloseCurrentPopup();
             m_unsavedSceneBeganSave = false;
             m_unsavedSceneCallback();
             m_unsavedSceneCallback = nullptr;
+        }
+        else
+        {
+            ImGui::OpenPopup("Save failed");
         }
     }
     else
@@ -2078,6 +2082,22 @@ void Editor::popup_unsaved_scene()
         {
             ImGui::CloseCurrentPopup();
         }
+    }
+
+    const bool errorActive =
+        ImGui::BeginPopupModal("Save failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+    if (errorActive)
+    {
+        ImGui::Text("%s", m_sceneLoadErr.c_str());
+
+        if (ImGui::Button("OK"))
+        {
+            m_sceneLoadErr.clear();
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 
     ImGui::EndPopup();
