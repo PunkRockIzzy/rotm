@@ -76,11 +76,6 @@ class Core
         m_showFPSCounter = enabled;
     }
 
-    GuiContext &get_gui_context()
-    {
-        return *m_guiContext;
-    }
-
     const RaylibConfig &get_raylib_config() const
     {
         return m_raylibConfig;
@@ -133,8 +128,6 @@ class Core
     int m_lastWindowHeight = 0;
     bool m_isFullscreen = false;
 
-    std::unique_ptr<GuiContext> m_guiContext;
-
     std::unique_ptr<CoreModule> m_moduleActive;
     std::unique_ptr<CoreModule> m_moduleQueued;
 
@@ -144,5 +137,6 @@ class Core
   public: /* Fields */
     Logger logger;
     ResourceManager resources;
+    std::unique_ptr<GuiContext> guiContext;
 };
 } // namespace rotm
