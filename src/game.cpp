@@ -12,7 +12,7 @@ namespace rotm
 Game::Game(Core &coreRef)
     : CoreModule(coreRef), m_player({0.0f, 0.0f}, core.resources.fetch_texture("resources/colon3.png"))
 {
-    auto result = read_scene("test map");
+    auto result = read_scene("test scene");
 
     if (!result.has_value())
     {
