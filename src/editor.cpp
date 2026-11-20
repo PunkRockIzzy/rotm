@@ -306,8 +306,7 @@ void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilema
 
     write_tileset_metadata(m_scene->tileset, m_tilesetFilename);
 
-    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
-    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
+    window_stats_refresh_tile_count();
 }
 
 void Editor::destroy_scene()
@@ -433,8 +432,7 @@ void Editor::begin_init_stress_test()
 void Editor::end_init_stress_test()
 {
     m_scene->tilemap = m_stressTestJob.get();
-    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
-    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
+    window_stats_refresh_tile_count();
 }
 
 bool Editor::is_init_stress_test_in_progress()
@@ -675,8 +673,7 @@ void Editor::commit_tile_edit()
 
     m_sceneUnsavedChanges = true;
 
-    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
-    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
+    window_stats_refresh_tile_count();
 }
 
 void Editor::undo()
@@ -1363,6 +1360,12 @@ void Editor::window_stats()
     }
 
     ImGui::End();
+}
+
+void Editor::window_stats_refresh_tile_count()
+{
+    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
+    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
 }
 
 void Editor::window_log()

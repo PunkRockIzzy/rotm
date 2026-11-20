@@ -245,6 +245,7 @@ class Editor final : public CoreModule
     void child_scene_editor_tooloptions_brusheditor();
 
     void window_stats();
+    void window_stats_refresh_tile_count();
 
     void window_log();
     void window_log_menubar();
