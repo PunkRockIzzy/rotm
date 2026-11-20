@@ -7,6 +7,7 @@
 #include "time.hpp"
 #include "version.hpp"
 
+#include <deque>
 #include <format>
 #include <memory>
 #include <string>
@@ -94,6 +95,7 @@ class Core
   private: /* Static properties */
     static constexpr double SECONDS_PER_TICK = 1.0 / static_cast<double>(TICKS_PER_SECOND);
     static constexpr int MAX_TICKS_PER_FRAME = 4;
+    static constexpr std::size_t DELTA_HISTORY_MAX = 100;
 
   private: /* Methods */
     void update();
@@ -112,7 +114,8 @@ class Core
     void handle_exception_run();
     void handle_exception_shutdown();
 
-    double calculate_delta_time();
+    double calculate_delta_time() const;
+    int calculate_fps() const;
 
     std::string generate_screenshot_filename();
 
@@ -123,9 +126,10 @@ class Core
     bool m_devMode = false;
 
     double m_deltaTime = 0.0;
+    std::deque<double> m_deltaHistory;
+    double m_deltaHistorySum = 0.0;
 
     int m_fps = 0;
-    unsigned long long m_frameCountPastSecond = 0;
     bool m_showFPSCounter = false;
 
     double m_secondsSinceTick = 0.0;

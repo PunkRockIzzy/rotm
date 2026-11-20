@@ -10,7 +10,6 @@
 #include <cmath>
 #include <exception>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -113,8 +112,6 @@ void Core::run()
 
             draw();
 
-            ++m_frameCountPastSecond;
-
             SwapScreenBuffer();
 
             wait_for_next_frame();
@@ -131,6 +128,17 @@ void Core::run()
 void Core::update()
 {
     ZoneScopedN("Core::update");
+
+    if (m_deltaHistory.size() >= DELTA_HISTORY_MAX)
+    {
+        m_deltaHistorySum -= m_deltaHistory.front();
+        m_deltaHistory.pop_front();
+    }
+
+    m_deltaHistory.push_back(m_deltaTime);
+    m_deltaHistorySum += m_deltaTime;
+
+    m_fps = calculate_fps();
 
     m_moduleActive->update();
 
@@ -182,9 +190,6 @@ void Core::tick()
                 logger.print_info()("Purged {} unused textures.", texturesPurged);
             }
         }
-
-        m_fps = m_frameCountPastSecond;
-        m_frameCountPastSecond = 0;
     }
 
     ++m_tickCount;
@@ -396,9 +401,21 @@ void Core::handle_exception_shutdown()
     }
 }
 
-double Core::calculate_delta_time()
+double Core::calculate_delta_time() const
 {
     return std::chrono::duration<double>(time::since(m_timeLastFrame)).count();
+}
+
+int Core::calculate_fps() const
+{
+    const std::size_t deltaHistorySize = m_deltaHistory.size();
+
+    if (deltaHistorySize == 0)
+        return 0;
+
+    const double avg = m_deltaHistorySum / deltaHistorySize;
+
+    return static_cast<int>(std::round(1.0 / avg));
 }
 
 std::string Core::generate_screenshot_filename()
