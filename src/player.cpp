@@ -18,12 +18,12 @@ void Player::update(double deltaTime, const Tilemap &tilemap, int tileSize)
 {
     if (IsKeyDown(KEY_D))
     {
-        velocity.x = 50.0f;
+        velocity.x = 100.0f;
         sprite.flipH = false;
     }
     else if (IsKeyDown(KEY_A))
     {
-        velocity.x = -50.0f;
+        velocity.x = -100.0f;
         sprite.flipH = true;
     }
     else
