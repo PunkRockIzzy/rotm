@@ -305,6 +305,9 @@ void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilema
     }
 
     write_tileset_metadata(m_scene->tileset, m_tilesetFilename);
+
+    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
+    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
 }
 
 void Editor::destroy_scene()
@@ -669,6 +672,7 @@ void Editor::commit_tile_edit()
     m_editHistory.push(std::move(*m_currentCommand));
     m_currentCommand.reset();
     m_currentEditIndices.clear();
+
     m_sceneUnsavedChanges = true;
 
     m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
