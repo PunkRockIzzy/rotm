@@ -43,6 +43,9 @@ void Game::update()
     if (!m_scene)
         throw exception::Base("Game: Missing scene!");
 
+    Tilemap &tilemap = m_scene->tilemap;
+    const Tileset &tileset = m_scene->tileset;
+
     const double deltaTime = core.get_delta_time();
 
     if (WindowShouldClose())
@@ -54,11 +57,11 @@ void Game::update()
     if (IsKeyPressed(KEY_HOME))
         core.request_module_transition(std::make_unique<Editor>(core));
 
-    m_player.update(deltaTime, m_scene->tilemap, m_scene->tileset.get_tile_size());
+    m_player.update(deltaTime, tilemap, tileset.get_tile_size());
 
     update_camera();
 
-    m_scene->render.tilemap.update(m_scene->tileset, m_scene->tilemap, m_scene->camera);
+    m_scene->render.tilemap.update(tileset, tilemap, m_scene->camera);
 }
 
 void Game::draw()
