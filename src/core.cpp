@@ -32,7 +32,7 @@ Core::Core(int argc, char *argv[]) : logger(m_timeStart), resources(logger)
 
         init_raylib();
 
-        m_guiContext = std::make_unique<GuiContext>(*this);
+        guiContext = std::make_unique<GuiContext>(*this);
 
         m_moduleActive = std::make_unique<StartupModule>(*this);
     }
@@ -52,7 +52,7 @@ Core::~Core()
     {
         m_moduleActive.reset();
 
-        m_guiContext.reset();
+        guiContext.reset();
 
         logger.print_info()("Clearing resources...");
         resources.clear();
@@ -190,9 +190,9 @@ void Core::draw()
 
     m_moduleActive->draw();
 
-    m_guiContext->begin_frame();
+    guiContext->begin_frame();
     m_moduleActive->sync_gui();
-    m_guiContext->end_frame();
+    guiContext->end_frame();
 
     if (m_showFPSCounter)
         DrawText(TextFormat("%i FPS", m_fps), 10, 10, 20, Fade(WHITE, 0.33f));
