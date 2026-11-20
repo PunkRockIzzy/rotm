@@ -87,6 +87,7 @@ void Editor::update()
         if (m_sceneUnsavedChanges)
         {
             m_openUnsavedScene = true;
+            m_unsavedSceneCallback = [this]() -> void { m_wantExit = true; };
         }
         else
         {
@@ -893,7 +894,15 @@ void Editor::main_menu_bar()
         }
         else if (clickedExit)
         {
-            m_wantExit = true;
+            if (m_sceneUnsavedChanges)
+            {
+                m_openUnsavedScene = true;
+                m_unsavedSceneCallback = [this]() { m_wantExit = true; };
+            }
+            else
+            {
+                m_wantExit = true;
+            }
         }
 
         ImGui::EndMenu();
