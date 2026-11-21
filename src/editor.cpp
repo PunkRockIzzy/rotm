@@ -1854,6 +1854,9 @@ void Editor::popup_unsaved_scene()
         m_openUnsavedScene = false;
     }
 
+    ImGui::SetNextWindowPos({static_cast<float>(GetScreenWidth()) * 0.5f, static_cast<float>(GetScreenHeight()) * 0.5f},
+                            ImGuiCond_Always, {0.5f, 0.5f});
+
     const bool active = ImGui::BeginPopupModal("Unsaved scene edits", nullptr,
                                                ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
 
@@ -1875,6 +1878,7 @@ void Editor::popup_unsaved_scene()
         }
         else
         {
+            ImGui::TextUnformatted("Failed to save.");
             ImGui::OpenPopup("Save failed");
         }
     }
@@ -1911,11 +1915,12 @@ void Editor::popup_unsaved_scene()
 
     if (errorActive)
     {
-        ImGui::Text("%s", m_sceneLoadErr.c_str());
+        ImGui::Text("%s", m_sceneSaveErr.c_str());
 
         if (ImGui::Button("OK"))
         {
-            m_sceneLoadErr.clear();
+            m_unsavedSceneBeganSave = false;
+            m_sceneSaveErr.clear();
             ImGui::CloseCurrentPopup();
         }
 
