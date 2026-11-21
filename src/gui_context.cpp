@@ -21,8 +21,8 @@ GuiContext::GuiContext(Core &coreRef) : core(coreRef), logger(core.logger)
 
     m_fonts = {.regular = io->Fonts->AddFontFromFileTTF("resources/iosevka.ttf", 21.5f),
                .regularSmall = io->Fonts->AddFontFromFileTTF("resources/iosevka.ttf", 16.0f),
-               .monospace = io->Fonts->AddFontFromFileTTF("resources/consolas.ttf", 21.5f),
-               .monospaceSmall = io->Fonts->AddFontFromFileTTF("resources/consolas.ttf", 16.0f)};
+               .monospace = io->Fonts->AddFontFromFileTTF("resources/iosevka_term_mono.ttf", 32.0f),
+               .monospaceSmall = io->Fonts->AddFontFromFileTTF("resources/iosevka_term_mono.ttf", 20.0f)};
 }
 
 GuiContext::~GuiContext()
