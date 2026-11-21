@@ -305,6 +305,17 @@ void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilema
     write_tileset_metadata(m_scene->tileset, m_tilesetFilename);
 
     window_stats_refresh_tile_count();
+
+    // find first valid tile
+    const std::vector<bool> usableTiles = m_scene->tileset.get_usable_tiles();
+    for (std::size_t i = 0; i < usableTiles.size(); ++i)
+    {
+        if (usableTiles.at(i))
+        {
+            m_windowSceneEditor.tileToPlace.id = static_cast<int>(i);
+            break;
+        }
+    }
 }
 
 void Editor::destroy_scene()
