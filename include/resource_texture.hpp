@@ -10,8 +10,8 @@ namespace rotm
 {
 class TextureResource final : public Resource<Texture2D>
 {
-  public:
-    TextureResource(const std::filesystem::path &path) : Resource<Texture2D>(path)
+public:
+    TextureResource(const std::filesystem::path& path) : Resource<Texture2D>(path)
     {
         const std::string pathStr = m_path.string();
 

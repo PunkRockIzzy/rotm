@@ -22,7 +22,7 @@ namespace rotm
 {
 using StartupModule = Editor;
 
-Core::Core(int argc, char *argv[]) : logger(m_timeStart), resources(logger)
+Core::Core(int argc, char* argv[]) : logger(m_timeStart), resources(logger)
 {
     logger.print_info()("RotM v{}.{}, build date " __DATE__, version::MAJOR, version::MINOR);
 
@@ -38,7 +38,7 @@ Core::Core(int argc, char *argv[]) : logger(m_timeStart), resources(logger)
 
         m_moduleActive = std::make_unique<StartupModule>(*this);
     }
-    catch (const std::exception &)
+    catch (const std::exception&)
     {
         handle_exception_init();
     }
@@ -61,7 +61,7 @@ Core::~Core()
 
         shutdown_raylib();
     }
-    catch (const std::exception &)
+    catch (const std::exception&)
     {
         handle_exception_shutdown();
     }
@@ -119,7 +119,7 @@ void Core::run()
             FrameMark;
         }
     }
-    catch (const std::exception &)
+    catch (const std::exception&)
     {
         handle_exception_run();
     }
@@ -226,7 +226,7 @@ void Core::wait_for_next_frame()
 
     static constexpr milliseconds SLEEP_MARGIN = 5ms;
 
-    const int &targetFPS = m_raylibConfig.targetFPS;
+    const int& targetFPS = m_raylibConfig.targetFPS;
 
     if (targetFPS == 0)
         return;
@@ -243,7 +243,7 @@ void Core::wait_for_next_frame()
     }
 }
 
-bool read_int_arg(std::string_view arg, const std::string_view &argValue, int &target)
+bool read_int_arg(std::string_view arg, const std::string_view& argValue, int& target)
 {
     if (argValue.size() <= arg.size())
         return false;
@@ -259,7 +259,7 @@ bool read_int_arg(std::string_view arg, const std::string_view &argValue, int &t
 
         return true;
     }
-    catch (const std::exception &)
+    catch (const std::exception&)
     {
         return false;
     }
@@ -277,7 +277,7 @@ bool read_int_arg(std::string_view arg, const std::string_view &argValue, int &t
     -f or --target-fps [int]
     --rl-log-level [int]
 */
-void Core::parse_args(int argc, char *argv[])
+void Core::parse_args(int argc, char* argv[])
 {
     using std::size_t;
     using std::string_view;
@@ -292,7 +292,7 @@ void Core::parse_args(int argc, char *argv[])
 
     for (size_t i = 0; i < arguments.size(); ++i)
     {
-        const std::string_view &arg = arguments[i];
+        const std::string_view& arg = arguments[i];
 
         if (arg == "-dev")
         {
@@ -362,7 +362,7 @@ void Core::handle_exception_init()
     {
         throw;
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         logger.print_error()("An unhandled exception occurred during program startup: {}", e.what());
 
@@ -377,7 +377,7 @@ void Core::handle_exception_run()
     {
         throw;
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         logger.print_error()("An unhandled exception occurred during program running: {}", e.what());
 
@@ -392,7 +392,7 @@ void Core::handle_exception_shutdown()
     {
         throw;
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         logger.print_error()("An unhandled exception occurred during program shutdown: {}", e.what());
 

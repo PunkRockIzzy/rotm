@@ -6,19 +6,19 @@ namespace rotm
 {
 template <typename StoredType> class Resource
 {
-  public:
-    Resource(const std::filesystem::path &path) : m_path(path)
+public:
+    Resource(const std::filesystem::path& path) : m_path(path)
     {
     }
 
     virtual ~Resource() = default;
 
-    virtual const StoredType &get() const
+    virtual const StoredType& get() const
     {
         return m_data;
     }
 
-  protected:
+protected:
     StoredType m_data;
     std::filesystem::path m_path;
 };

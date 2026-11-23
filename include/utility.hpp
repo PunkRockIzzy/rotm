@@ -47,7 +47,7 @@ inline std::string_view clean_function_name(std::string_view funcName)
  * @brief Creates a vector of bytes from a vector of bools.
  *
  */
-inline std::vector<std::uint8_t> pack_bitset(const std::vector<bool> &bits)
+inline std::vector<std::uint8_t> pack_bitset(const std::vector<bool>& bits)
 {
     const std::size_t byteCount = bits.size() % 8 == 0 ? bits.size() / 8 : (bits.size() / 8) + 1;
 
@@ -57,7 +57,7 @@ inline std::vector<std::uint8_t> pack_bitset(const std::vector<bool> &bits)
     std::uint8_t bitCount = 0;
     std::uint8_t currentByte = 0;
 
-    for (const auto &bit : bits)
+    for (const auto& bit : bits)
     {
         if (bit)
             currentByte |= (0b00000001u << bitCount);
@@ -86,7 +86,7 @@ inline std::vector<std::uint8_t> pack_bitset(const std::vector<bool> &bits)
  *
  * @param bytes Source vector.
  */
-inline std::vector<bool> unpack_bitset(const std::vector<std::uint8_t> &bytes)
+inline std::vector<bool> unpack_bitset(const std::vector<std::uint8_t>& bytes)
 {
     using std::size_t;
     using std::uint8_t;
@@ -94,7 +94,7 @@ inline std::vector<bool> unpack_bitset(const std::vector<std::uint8_t> &bytes)
     std::vector<bool> out;
     out.reserve(bytes.size() * 8); // could be more than needed but it doesn't hurt anything
 
-    for (const auto &byte : bytes)
+    for (const auto& byte : bytes)
     {
         for (uint8_t bitIdx = 0; bitIdx < 8; ++bitIdx)
         {
@@ -107,11 +107,11 @@ inline std::vector<bool> unpack_bitset(const std::vector<std::uint8_t> &bytes)
     return out;
 }
 
-template <typename T> bool write_to_stream(std::ostream &file, const T &source, std::size_t *filePos = nullptr)
+template <typename T> bool write_to_stream(std::ostream& file, const T& source, std::size_t* filePos = nullptr)
 {
     static_assert(std::is_trivially_copyable_v<T>);
 
-    file.write(reinterpret_cast<const char *>(&source), sizeof(T));
+    file.write(reinterpret_cast<const char*>(&source), sizeof(T));
 
     if (file.good())
     {
@@ -123,11 +123,11 @@ template <typename T> bool write_to_stream(std::ostream &file, const T &source, 
     return false;
 }
 
-template <typename T> bool read_from_stream(std::istream &file, T &target, std::size_t *filePos = nullptr)
+template <typename T> bool read_from_stream(std::istream& file, T& target, std::size_t* filePos = nullptr)
 {
     static_assert(std::is_trivially_copyable_v<T>);
 
-    file.read(reinterpret_cast<char *>(&target), sizeof(T));
+    file.read(reinterpret_cast<char*>(&target), sizeof(T));
 
     if (file.good())
     {

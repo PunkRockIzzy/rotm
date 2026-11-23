@@ -10,12 +10,12 @@
 
 namespace rotm
 {
-Player::Player(Vector2 startPos, std::shared_ptr<TextureResource> &&spriteTexture)
+Player::Player(Vector2 startPos, std::shared_ptr<TextureResource>&& spriteTexture)
     : SpriteActor(startPos, std::move(spriteTexture))
 {
 }
 
-void Player::update(double deltaTime, const Tilemap &tilemap, int tileSize)
+void Player::update(double deltaTime, const Tilemap& tilemap, int tileSize)
 {
     if (IsKeyDown(KEY_D))
     {
@@ -58,7 +58,7 @@ void Player::update(double deltaTime, const Tilemap &tilemap, int tileSize)
     resolve_rightwall_collision(tilemap, tileSize);
 }
 
-void Player::resolve_ground_collision(const Tilemap &tilemap, int tileSize)
+void Player::resolve_ground_collision(const Tilemap& tilemap, int tileSize)
 {
     const std::optional<GlobalTileCoord> touchingGround = touching_ground(tilemap, tileSize);
 
@@ -76,7 +76,7 @@ void Player::resolve_ground_collision(const Tilemap &tilemap, int tileSize)
     }
 }
 
-void Player::resolve_ceiling_collision(const Tilemap &tilemap, int tileSize)
+void Player::resolve_ceiling_collision(const Tilemap& tilemap, int tileSize)
 {
     const std::optional<GlobalTileCoord> touchingCeiling = touching_ceiling(tilemap, tileSize);
 
@@ -92,7 +92,7 @@ void Player::resolve_ceiling_collision(const Tilemap &tilemap, int tileSize)
     }
 }
 
-void Player::resolve_leftwall_collision(const Tilemap &tilemap, int tileSize)
+void Player::resolve_leftwall_collision(const Tilemap& tilemap, int tileSize)
 {
     const std::optional<GlobalTileCoord> touchingLeftWall = touching_leftwall(tilemap, tileSize);
 
@@ -108,7 +108,7 @@ void Player::resolve_leftwall_collision(const Tilemap &tilemap, int tileSize)
     }
 }
 
-void Player::resolve_rightwall_collision(const Tilemap &tilemap, int tileSize)
+void Player::resolve_rightwall_collision(const Tilemap& tilemap, int tileSize)
 {
     const std::optional<GlobalTileCoord> touchingRightWall = touching_rightwall(tilemap, tileSize);
 

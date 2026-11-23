@@ -20,6 +20,6 @@ struct SceneFileData
     std::filesystem::path tilesetPath;
 };
 
-std::optional<std::string> write_scene(const Scene &scene, std::string_view sceneName);
+std::optional<std::string> write_scene(const Scene& scene, std::string_view sceneName);
 std::expected<SceneFileData, std::string> read_scene(std::string_view sceneName);
 } // namespace rotm

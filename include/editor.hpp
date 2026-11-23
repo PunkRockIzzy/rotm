@@ -25,8 +25,8 @@ namespace rotm
 {
 class Editor final : public CoreModule
 {
-  public: /* Methods */
-    Editor(Core &coreRef);
+public: /* Methods */
+    Editor(Core& coreRef);
     ~Editor() override;
 
     void update() override;
@@ -34,7 +34,7 @@ class Editor final : public CoreModule
     void draw() override;
     void sync_gui() override;
 
-  private: /* Static properties */
+private: /* Static properties */
     static constexpr char INI_PATH[] = "editor.ini";
 
     static constexpr char SCENE_NAME_DEFAULT[] = "Unnamed scene";
@@ -56,7 +56,7 @@ class Editor final : public CoreModule
     static constexpr int PENCIL_SIZE_MAX = TilemapChunk::SIZE;
     static constexpr int ERASER_SIZE_MAX = TilemapChunk::SIZE;
 
-  private: /* Types */
+private: /* Types */
     // Session info to be saved to INI
     struct Config
     {
@@ -84,7 +84,7 @@ class Editor final : public CoreModule
     {
         TileEdit() = delete;
 
-        TileEdit(const GlobalTileCoord &_position, const TileData &_previous, const TileData &_replacement)
+        TileEdit(const GlobalTileCoord& _position, const TileData& _previous, const TileData& _replacement)
             : position(_position), previous(_previous), replacement(_replacement)
         {
         }
@@ -98,17 +98,17 @@ class Editor final : public CoreModule
     {
         std::vector<TileEdit> edits;
 
-        void apply(Tilemap &tilemap);
-        void undo(Tilemap &tilemap);
-        void redo(Tilemap &tilemap);
+        void apply(Tilemap& tilemap);
+        void undo(Tilemap& tilemap);
+        void redo(Tilemap& tilemap);
     };
 
     class EditHistory
     {
-      public:
+    public:
         void push(TileEditCommand command);
-        void undo(Tilemap &tilemap);
-        void redo(Tilemap &tilemap);
+        void undo(Tilemap& tilemap);
+        void redo(Tilemap& tilemap);
         void clear();
 
         bool can_undo() const
@@ -120,7 +120,7 @@ class Editor final : public CoreModule
             return m_cursor < m_commands.size();
         }
 
-      private:
+    private:
         std::vector<TileEditCommand> m_commands;
         std::size_t m_cursor = 0;
     };
@@ -157,7 +157,7 @@ class Editor final : public CoreModule
         int eraserTileHeight = 1;
     };
 
-  private: /* Methods */
+private: /* Methods */
     void cfg_update();
     void cfg_apply();
     bool ini_load();
@@ -166,8 +166,8 @@ class Editor final : public CoreModule
     Camera2D get_camera_default();
     Vector2 get_camera_offset();
 
-    void init_scene(const TilesetMetadata &tilesetMetadata);
-    void init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilemap);
+    void init_scene(const TilesetMetadata& tilesetMetadata);
+    void init_scene(const TilesetMetadata& tilesetMetadata, Tilemap&& tilemap);
     void destroy_scene();
 
     void begin_save_scene();
@@ -190,11 +190,11 @@ class Editor final : public CoreModule
     bool load_tileset_atlas();
 
     void handle_shortcuts();
-    void use_tool_at(const GlobalTileCoord &coord);
-    void tool_pencil(const GlobalTileCoord &coord);
-    void tool_eraser(const GlobalTileCoord &coord);
+    void use_tool_at(const GlobalTileCoord& coord);
+    void tool_pencil(const GlobalTileCoord& coord);
+    void tool_eraser(const GlobalTileCoord& coord);
 
-    void record_tile_edit(const GlobalTileCoord &position, const TileData &previous, const TileData &replacement);
+    void record_tile_edit(const GlobalTileCoord& position, const TileData& previous, const TileData& replacement);
     void commit_tile_edit();
 
     void undo();
@@ -216,9 +216,9 @@ class Editor final : public CoreModule
     void window_scene_editor();
     bool window_scene_editor_active();
     void window_scene_editor_handle_input(); // holy underscore batman
-    void child_scene_editor_toolbox(const ImVec2 &size);
-    void child_scene_editor_tilepalette(const ImVec2 &size);
-    void child_scene_editor_tooloptions(const ImVec2 &size);
+    void child_scene_editor_toolbox(const ImVec2& size);
+    void child_scene_editor_tilepalette(const ImVec2& size);
+    void child_scene_editor_tooloptions(const ImVec2& size);
     void child_scene_editor_tooloptions_brusheditor();
 
     void window_stats();
@@ -238,11 +238,11 @@ class Editor final : public CoreModule
 
     void popup_unsaved_scene();
 
-  private: /* Fields */
+private: /* Fields */
     // Reference to core.logger
-    Logger &logger;
+    Logger& logger;
     // Reference to core.resources
-    ResourceManager &resources;
+    ResourceManager& resources;
 
     Config m_cfg;
 
@@ -303,7 +303,8 @@ class Editor final : public CoreModule
     std::string m_tilesetFilename = TILESET_FILENAME_DEFAULT;
     // Holds text for tileset filename input box.
     std::string m_tilesetFilenameInput = m_tilesetFilename;
-    // Tileset texture for use in configuration. Passed on to m_scene->tileset on scene init.
+    // Tileset texture for use in configuration. Passed on to m_scene->tileset
+    // on scene init.
     std::shared_ptr<TextureResource> m_tilesetAtlas;
     // Holds error message from tileset loading process.
     std::string m_tilesetLoadErr;
@@ -316,8 +317,8 @@ class Editor final : public CoreModule
     bool m_openUnsavedScene = false;
     // Has the unsaved scene dialog initiated a save?
     bool m_unsavedSceneBeganSave = false;
-    // Holds a callback which is executed when the unsaved scene dialog either finishes saving or discards the current
-    // scene.
+    // Holds a callback which is executed when the unsaved scene dialog either
+    // finishes saving or discards the current scene.
     std::function<void()> m_unsavedSceneCallback;
 
     // Holds variables related to the scene editor.

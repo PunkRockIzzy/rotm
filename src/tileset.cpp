@@ -6,7 +6,7 @@
 
 namespace rotm
 {
-Tileset::Tileset(std::shared_ptr<TextureResource> &&atlasTexture, const TilesetMetadata &metadata)
+Tileset::Tileset(std::shared_ptr<TextureResource>&& atlasTexture, const TilesetMetadata& metadata)
     : m_tileSize(metadata.tileSize), m_atlas(std::move(atlasTexture)),
       m_usableTiles(unpack_bitset(metadata.usableTilesPacked))
 {
@@ -31,7 +31,7 @@ bool Tileset::has_tile(TileData::IDType id) const
     return m_usableTiles[idx];
 }
 
-const Vector2 *Tileset::get_uv(TileData::IDType id) const
+const Vector2* Tileset::get_uv(TileData::IDType id) const
 {
     if (!has_tile(id))
         return nullptr;
@@ -44,7 +44,7 @@ Rectangle Tileset::get_uv_rec(TileData::IDType id) const
     if (!has_tile(id))
         return {0.0f, 0.0f, 0.0f, 0.0f};
 
-    const Vector2 &uv = m_uvs[id];
+    const Vector2& uv = m_uvs[id];
     const float tileSizeF = static_cast<float>(m_tileSize);
 
     return Rectangle{.x = uv.x, .y = uv.y, .width = tileSizeF, .height = tileSizeF};
@@ -52,7 +52,7 @@ Rectangle Tileset::get_uv_rec(TileData::IDType id) const
 
 void Tileset::generate_uvs()
 {
-    const Texture2D &atlas = get_atlas();
+    const Texture2D& atlas = get_atlas();
 
     const int atlasTileWidth = atlas.width / m_tileSize;
     const int atlasTileHeight = atlas.height / m_tileSize;

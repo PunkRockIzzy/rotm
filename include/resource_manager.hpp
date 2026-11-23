@@ -13,12 +13,12 @@ namespace rotm
 {
 template <typename StoredType> class ResourceCache
 {
-  public:
-    ResourceCache(Logger &loggerRef) : logger(loggerRef)
+public:
+    ResourceCache(Logger& loggerRef) : logger(loggerRef)
     {
     }
 
-    std::shared_ptr<StoredType> fetch(const std::filesystem::path &path)
+    std::shared_ptr<StoredType> fetch(const std::filesystem::path& path)
     {
         namespace fs = std::filesystem;
 
@@ -65,20 +65,20 @@ template <typename StoredType> class ResourceCache
         m_cache.clear();
     }
 
-  private:
-    Logger &logger;
+private:
+    Logger& logger;
 
     std::unordered_map<std::filesystem::path, std::shared_ptr<StoredType>> m_cache;
 };
 
 class ResourceManager
 {
-  public:
-    ResourceManager(Logger &loggerRef) : m_textureCache(loggerRef)
+public:
+    ResourceManager(Logger& loggerRef) : m_textureCache(loggerRef)
     {
     }
 
-    std::shared_ptr<TextureResource> fetch_texture(const std::filesystem::path &path)
+    std::shared_ptr<TextureResource> fetch_texture(const std::filesystem::path& path)
     {
         return m_textureCache.fetch(path);
     }
@@ -93,7 +93,7 @@ class ResourceManager
         m_textureCache.clear();
     }
 
-  private:
+private:
     ResourceCache<TextureResource> m_textureCache;
 };
 } // namespace rotm

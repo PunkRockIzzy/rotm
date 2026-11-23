@@ -8,14 +8,14 @@ namespace rotm
 {
 class Game final : public CoreModule
 {
-  public: /* Methods */
-    Game(Core &coreRef);
+public: /* Methods */
+    Game(Core& coreRef);
     ~Game() override;
 
     void update() override;
     void draw() override;
 
-  public:
+public:
     struct Constants
     {
         static constexpr float GRAVITY = 1000.0f;
@@ -23,11 +23,11 @@ class Game final : public CoreModule
         static constexpr float JUMP_FORCE = 300.0f;
     };
 
-  private: /* Methods */
+private: /* Methods */
     void update_camera();
     static Vector2 get_camera_offset();
 
-  private: /* Fields */
+private: /* Fields */
     std::unique_ptr<Scene> m_scene;
 
     Player m_player;

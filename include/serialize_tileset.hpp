@@ -21,6 +21,6 @@ struct TilesetMetadata
     std::vector<std::uint8_t> usableTilesPacked;
 };
 
-std::optional<std::string> write_tileset_metadata(const Tileset &tileset, const std::filesystem::path &tilesetPath);
-std::expected<TilesetMetadata, std::string> read_tileset_metadata(const std::filesystem::path &tilesetPath);
+std::optional<std::string> write_tileset_metadata(const Tileset& tileset, const std::filesystem::path& tilesetPath);
+std::expected<TilesetMetadata, std::string> read_tileset_metadata(const std::filesystem::path& tilesetPath);
 } // namespace rotm

@@ -41,7 +41,7 @@
 
 namespace rotm
 {
-Editor::Editor(Core &coreRef) : CoreModule(coreRef), logger(core.logger), resources(core.resources)
+Editor::Editor(Core& coreRef) : CoreModule(coreRef), logger(core.logger), resources(core.resources)
 {
     logger.print_info()("Initializing editor...");
 
@@ -184,18 +184,18 @@ void Editor::cfg_apply()
 }
 
 template <typename T>
-void ini_write(mINI::INIStructure &ini, const std::string &section, const std::string &key, T value)
+void ini_write(mINI::INIStructure& ini, const std::string& section, const std::string& key, T value)
 {
     ini[section][key] = std::to_string(value);
 }
 
-template <> void ini_write(mINI::INIStructure &ini, const std::string &section, const std::string &key, bool value)
+template <> void ini_write(mINI::INIStructure& ini, const std::string& section, const std::string& key, bool value)
 {
     ini[section][key] = std::to_string(static_cast<int>(value));
 }
 
-void ini_read_int(Logger &logger, const mINI::INIStructure &ini, const std::string &section, const std::string &key,
-                  int &target)
+void ini_read_int(Logger& logger, const mINI::INIStructure& ini, const std::string& section, const std::string& key,
+                  int& target)
 {
     if (!ini.has(section))
         return logger.print_warning()("INI missing section. (section={})", section);
@@ -213,7 +213,7 @@ void ini_read_int(Logger &logger, const mINI::INIStructure &ini, const std::stri
 
         logger.print_info()("Loaded INI value. (section={}, key={}, value={})", section, key, target);
     }
-    catch (const std::invalid_argument &)
+    catch (const std::invalid_argument&)
     {
         logger.print_warning()("INI value is not an integer. (section={}, key={}, value={})", section, key, valueStr);
     }
@@ -236,13 +236,13 @@ bool Editor::ini_load()
     mINI::INIStructure ini;
     file.read(ini);
 
-    auto readWindowInt = [&](const std::string &key, int &target) { ini_read_int(logger, ini, "Window", key, target); };
+    auto readWindowInt = [&](const std::string& key, int& target) { ini_read_int(logger, ini, "Window", key, target); };
 
     readWindowInt("iPosX", m_cfg.window.x);
     readWindowInt("iPosY", m_cfg.window.y);
     readWindowInt("iSizeX", m_cfg.window.width);
     readWindowInt("iSizeY", m_cfg.window.height);
-    readWindowInt("bMaximized", reinterpret_cast<int &>(m_cfg.window.maximized));
+    readWindowInt("bMaximized", reinterpret_cast<int&>(m_cfg.window.maximized));
 
     return true;
 }
@@ -257,7 +257,7 @@ void Editor::ini_save()
 
     mINI::INIStructure ini;
 
-    auto writeWindowInt = [&ini](const std::string &key, int value) { ini_write(ini, "Window", key, value); };
+    auto writeWindowInt = [&ini](const std::string& key, int value) { ini_write(ini, "Window", key, value); };
 
     writeWindowInt("iPosX", m_cfg.window.x);
     writeWindowInt("iPosY", m_cfg.window.y);
@@ -279,13 +279,13 @@ Vector2 Editor::get_camera_offset()
                    .y = static_cast<float>(m_sceneView.texture.height) * 0.5f};
 }
 
-void Editor::init_scene(const TilesetMetadata &tilesetMetadata)
+void Editor::init_scene(const TilesetMetadata& tilesetMetadata)
 {
     init_scene(tilesetMetadata, Tilemap{});
     m_sceneNeverSaved = true;
 }
 
-void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilemap)
+void Editor::init_scene(const TilesetMetadata& tilesetMetadata, Tilemap&& tilemap)
 {
     m_scene = std::make_unique<Scene>(Tileset{std::move(m_tilesetAtlas), tilesetMetadata}, m_tilesetFilename,
                                       std::move(tilemap));
@@ -307,7 +307,7 @@ void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilema
     window_stats_refresh_tile_count();
 
     // find first valid tile
-    const std::vector<bool> &usableTiles = m_scene->tileset.get_usable_tiles();
+    const std::vector<bool>& usableTiles = m_scene->tileset.get_usable_tiles();
     for (std::size_t i = 0; i < usableTiles.size(); ++i)
     {
         if (usableTiles.at(i))
@@ -468,7 +468,7 @@ void Editor::switch_to_game()
     {
         core.request_module_transition(std::make_unique<Game>(core));
     }
-    catch (const exception::Base &e)
+    catch (const exception::Base& e)
     {
         logger.print_error()("Failed to switch to game module.");
     }
@@ -482,7 +482,7 @@ bool Editor::load_tileset_atlas()
 
         return true;
     }
-    catch (const exception::Base &e)
+    catch (const exception::Base& e)
     {
         m_tilesetLoadErr = e.what();
     }
@@ -573,7 +573,7 @@ void Editor::handle_shortcuts()
                 break;
 
             case KEY_F4: {
-                TilemapRenderer &renderer = m_scene->render.tilemap;
+                TilemapRenderer& renderer = m_scene->render.tilemap;
 
                 renderer.showChunkBorders = !renderer.showChunkBorders;
 
@@ -598,7 +598,7 @@ void Editor::handle_shortcuts()
     }
 }
 
-void Editor::use_tool_at(const GlobalTileCoord &coord)
+void Editor::use_tool_at(const GlobalTileCoord& coord)
 {
     using enum EditTool;
 
@@ -618,11 +618,11 @@ void Editor::use_tool_at(const GlobalTileCoord &coord)
     }
 }
 
-void Editor::tool_pencil(const GlobalTileCoord &coord)
+void Editor::tool_pencil(const GlobalTileCoord& coord)
 {
     const AbsoluteTileCoord coordAbs = global_to_absolute(coord);
-    const int &width = m_windowSceneEditor.pencilTileWidth;
-    const int &height = m_windowSceneEditor.pencilTileHeight;
+    const int& width = m_windowSceneEditor.pencilTileWidth;
+    const int& height = m_windowSceneEditor.pencilTileHeight;
 
     AbsoluteTileCoord tileMin = {coordAbs.x - (width / 2), coordAbs.y - (height / 2)};
 
@@ -638,7 +638,7 @@ void Editor::tool_pencil(const GlobalTileCoord &coord)
         for (int x = tileMin.x; x <= tileMax.x; ++x)
         {
             const GlobalTileCoord c = absolute_to_global({x, y});
-            const TileData *prevPtr = m_scene->tilemap.get_tile(c);
+            const TileData* prevPtr = m_scene->tilemap.get_tile(c);
             const TileData previous = prevPtr ? *prevPtr : TileData{};
 
             record_tile_edit(c, previous, m_windowSceneEditor.tileToPlace);
@@ -646,9 +646,9 @@ void Editor::tool_pencil(const GlobalTileCoord &coord)
     }
 }
 
-void Editor::tool_eraser(const GlobalTileCoord &coord)
+void Editor::tool_eraser(const GlobalTileCoord& coord)
 {
-    const TileData *prevPtr = m_scene->tilemap.get_tile(coord);
+    const TileData* prevPtr = m_scene->tilemap.get_tile(coord);
 
     if (!prevPtr)
         return;
@@ -656,7 +656,7 @@ void Editor::tool_eraser(const GlobalTileCoord &coord)
     record_tile_edit(coord, *prevPtr, TileData{});
 }
 
-void Editor::record_tile_edit(const GlobalTileCoord &position, const TileData &previous, const TileData &replacement)
+void Editor::record_tile_edit(const GlobalTileCoord& position, const TileData& previous, const TileData& replacement)
 {
     const auto it = m_currentEditIndices.find(position);
 
@@ -717,8 +717,8 @@ void Editor::draw_tile_cursor()
     switch (m_editTool)
     {
     case Pencil: {
-        const int &width = m_windowSceneEditor.pencilTileWidth;
-        const int &height = m_windowSceneEditor.pencilTileHeight;
+        const int& width = m_windowSceneEditor.pencilTileWidth;
+        const int& height = m_windowSceneEditor.pencilTileHeight;
 
         AbsoluteTileCoord tileMin = {coordAbs.x - (width / 2), coordAbs.y - (height / 2)};
         AbsoluteTileCoord tileMax = {coordAbs.x + (width / 2), coordAbs.y + (height / 2)};
@@ -745,7 +745,7 @@ void Editor::draw_tile_cursor()
             if (m_tileCursorAnimCounter >= pi * 2.0)
                 m_tileCursorAnimCounter = 0;
 
-            for (const Rectangle &rec : recs)
+            for (const Rectangle& rec : recs)
             {
                 DrawRectangleLinesEx(rec, 2.0f, Fade(WHITE, 0.5f));
             }
@@ -758,8 +758,8 @@ void Editor::draw_tile_cursor()
 
     case Eraser: {
         {
-            const int &width = m_windowSceneEditor.eraserTileWidth;
-            const int &height = m_windowSceneEditor.eraserTileHeight;
+            const int& width = m_windowSceneEditor.eraserTileWidth;
+            const int& height = m_windowSceneEditor.eraserTileHeight;
 
             AbsoluteTileCoord tileMin = {coordAbs.x - (width / 2), coordAbs.y - (height / 2)};
             AbsoluteTileCoord tileMax = {coordAbs.x + (width / 2), coordAbs.y + (height / 2)};
@@ -786,7 +786,7 @@ void Editor::draw_tile_cursor()
                 if (m_tileCursorAnimCounter >= pi * 2.0)
                     m_tileCursorAnimCounter = 0;
 
-                for (const Rectangle &rec : recs)
+                for (const Rectangle& rec : recs)
                 {
                     DrawRectangleLinesEx(rec, 2.0f, Fade(WHITE, 0.5f));
                 }
@@ -810,14 +810,14 @@ void Editor::draw_edit_preview()
     switch (m_editTool)
     {
     case Pencil:
-        for (const TileEdit &edit : m_currentCommand->edits)
+        for (const TileEdit& edit : m_currentCommand->edits)
         {
             m_scene->render.tilemap.draw_tile(m_scene->tileset, edit.position, edit.replacement, Fade(WHITE, 0.33f));
         }
         break;
 
     case Eraser:
-        for (const TileEdit &edit : m_currentCommand->edits)
+        for (const TileEdit& edit : m_currentCommand->edits)
         {
             const int tileSize = m_scene->tileset.get_tile_size();
 
@@ -965,7 +965,7 @@ void Editor::main_menu_bar()
 
         if (clickedShowChunkBorders)
         {
-            TilemapRenderer &renderer = m_scene->render.tilemap;
+            TilemapRenderer& renderer = m_scene->render.tilemap;
 
             renderer.showChunkBorders = !renderer.showChunkBorders;
         }
@@ -1109,7 +1109,7 @@ bool Editor::window_scene_editor_active()
 
 void Editor::window_scene_editor_handle_input()
 {
-    const Camera2D &cam = m_scene->camera;
+    const Camera2D& cam = m_scene->camera;
 
     const Vector2 mousePosScreen = GetMousePosition();
 
@@ -1180,7 +1180,7 @@ void Editor::window_scene_editor_handle_input()
     }
 }
 
-void Editor::child_scene_editor_toolbox(const ImVec2 &windowMax)
+void Editor::child_scene_editor_toolbox(const ImVec2& windowMax)
 {
     using enum EditTool;
 
@@ -1227,15 +1227,15 @@ void Editor::child_scene_editor_toolbox(const ImVec2 &windowMax)
     ImGui::EndChild();
 }
 
-void Editor::child_scene_editor_tilepalette(const ImVec2 &size)
+void Editor::child_scene_editor_tilepalette(const ImVec2& size)
 {
     const bool visible = ImGui::BeginChild("Tile Palette", size, ImGuiChildFlags_FrameStyle);
 
     if (!visible)
         return ImGui::EndChild();
 
-    const Tileset &tileset = m_scene->tileset;
-    const Texture2D &atlas = tileset.get_atlas();
+    const Tileset& tileset = m_scene->tileset;
+    const Texture2D& atlas = tileset.get_atlas();
 
     const float imageWidth = static_cast<float>(atlas.width);
     const float imageHeight = static_cast<float>(atlas.height);
@@ -1250,7 +1250,7 @@ void Editor::child_scene_editor_tilepalette(const ImVec2 &size)
 
     ImGui::Image(static_cast<ImTextureID>(atlas.id), imageSizeScaled);
 
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     const int tileSize = tileset.get_tile_size();
     const float tileSizeScaled = tileSize * scaleClamped;
@@ -1302,7 +1302,7 @@ void Editor::child_scene_editor_tilepalette(const ImVec2 &size)
     ImGui::EndChild();
 }
 
-void Editor::child_scene_editor_tooloptions(const ImVec2 &size)
+void Editor::child_scene_editor_tooloptions(const ImVec2& size)
 {
     using enum EditTool;
 
@@ -1359,7 +1359,7 @@ void Editor::window_stats()
 
     if (m_scene)
     {
-        const TilemapRenderer &tilemapRenderer = m_scene->render.tilemap;
+        const TilemapRenderer& tilemapRenderer = m_scene->render.tilemap;
 
         ImGui::SeparatorText("Tilemap");
 
@@ -1475,7 +1475,7 @@ void Editor::popup_configure_tile_size()
     if (!active)
         return;
 
-    const Texture2D &atlasTexture = m_tilesetAtlas->get();
+    const Texture2D& atlasTexture = m_tilesetAtlas->get();
 
     const ImVec2 textureSizeScaled = {static_cast<float>(atlasTexture.width) * GUI_CONFIGURE_TILESET_TEX_SCALE,
                                       static_cast<float>(atlasTexture.height) * GUI_CONFIGURE_TILESET_TEX_SCALE};
@@ -1486,7 +1486,7 @@ void Editor::popup_configure_tile_size()
 
     ImGui::Image(static_cast<ImTextureID>(atlasTexture.id), textureSizeScaled);
 
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     const int actualTileSize = m_tileSizeInput * TILE_SIZE_FACTOR;
 
@@ -1550,7 +1550,7 @@ void Editor::popup_configure_tileset()
     if (!active)
         return;
 
-    const Texture2D &atlasTexture = m_tilesetAtlas->get();
+    const Texture2D& atlasTexture = m_tilesetAtlas->get();
 
     const ImVec2 textureSizeScaled = {static_cast<float>(atlasTexture.width) * GUI_CONFIGURE_TILESET_TEX_SCALE,
                                       static_cast<float>(atlasTexture.height) * GUI_CONFIGURE_TILESET_TEX_SCALE};
@@ -1563,7 +1563,7 @@ void Editor::popup_configure_tileset()
 
     const bool imageHovered = ImGui::IsItemHovered();
 
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     const int actualTileSize = m_tileSizeInput * TILE_SIZE_FACTOR;
 
@@ -1720,7 +1720,7 @@ void Editor::popup_open_scene_table()
         {
             const fs::directory_iterator sceneRoot{SCENE_ROOT};
 
-            for (const fs::path &sceneFolder : sceneRoot)
+            for (const fs::path& sceneFolder : sceneRoot)
             {
                 if (!fs::is_directory(sceneFolder))
                     continue;
@@ -1737,7 +1737,7 @@ void Editor::popup_open_scene_table()
             ImGui::TableSetColumnIndex(0);
             ImGui::TextUnformatted("Available scenes:");
 
-            for (const fs::path &scene : m_loadableScenes)
+            for (const fs::path& scene : m_loadableScenes)
             {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
@@ -1941,23 +1941,23 @@ void Editor::popup_unsaved_scene()
     ImGui::EndPopup();
 }
 
-void Editor::TileEditCommand::apply(Tilemap &tilemap)
+void Editor::TileEditCommand::apply(Tilemap& tilemap)
 {
-    for (const TileEdit &edit : edits)
+    for (const TileEdit& edit : edits)
     {
         tilemap.set_tile(edit.position, edit.replacement);
     }
 }
 
-void Editor::TileEditCommand::undo(Tilemap &tilemap)
+void Editor::TileEditCommand::undo(Tilemap& tilemap)
 {
-    for (const TileEdit &edit : edits)
+    for (const TileEdit& edit : edits)
     {
         tilemap.set_tile(edit.position, edit.previous);
     }
 }
 
-void Editor::TileEditCommand::redo(Tilemap &tilemap)
+void Editor::TileEditCommand::redo(Tilemap& tilemap)
 {
     apply(tilemap);
 }
@@ -1972,7 +1972,7 @@ void Editor::EditHistory::push(TileEditCommand command)
     ++m_cursor;
 }
 
-void Editor::EditHistory::undo(Tilemap &tilemap)
+void Editor::EditHistory::undo(Tilemap& tilemap)
 {
     if (!can_undo())
         return;
@@ -1981,7 +1981,7 @@ void Editor::EditHistory::undo(Tilemap &tilemap)
     m_commands.at(m_cursor).undo(tilemap);
 }
 
-void Editor::EditHistory::redo(Tilemap &tilemap)
+void Editor::EditHistory::redo(Tilemap& tilemap)
 {
     if (!can_redo())
         return;

@@ -13,13 +13,13 @@ struct Scene
     Scene() = delete;
 
     // Create scene with an empty tilemap.
-    Scene(Tileset &&_tileset, const std::filesystem::path &_tilesetFileName)
+    Scene(Tileset&& _tileset, const std::filesystem::path& _tilesetFileName)
         : tileset(std::move(_tileset)), tilesetFileName(_tilesetFileName), tilemap()
     {
     }
 
     // Create scene with an existing tilemap.
-    Scene(Tileset &&_tileset, const std::filesystem::path &_tilesetFileName, Tilemap &&_tilemap)
+    Scene(Tileset&& _tileset, const std::filesystem::path& _tilesetFileName, Tilemap&& _tilemap)
         : tileset(std::move(_tileset)), tilesetFileName(_tilesetFileName), tilemap(std::move(_tilemap))
     {
     }

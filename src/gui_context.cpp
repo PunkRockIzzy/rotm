@@ -8,7 +8,7 @@
 
 namespace rotm
 {
-GuiContext::GuiContext(Core &coreRef) : core(coreRef), logger(core.logger)
+GuiContext::GuiContext(Core& coreRef) : core(coreRef), logger(core.logger)
 {
     logger.print_info()("Initializing GUI...");
 
@@ -56,7 +56,7 @@ void GuiContext::window_log()
     if (!visible)
         return ImGui::End();
 
-    const GuiContext::Fonts &fonts = core.guiContext->get_fonts();
+    const GuiContext::Fonts& fonts = core.guiContext->get_fonts();
 
     window_log_menubar();
 
@@ -110,7 +110,7 @@ void GuiContext::window_log_table()
     static constexpr ImColor bgError = {0.3f, 0.1f, 0.1f, 1.0f};
     static constexpr ImColor bgErrorAlt = {0.35f, 0.15f, 0.15f, 1.0f};
 
-    const std::deque<Logger::MsgData> &logHistory = logger.get_history();
+    const std::deque<Logger::MsgData>& logHistory = logger.get_history();
     const ImVec2 tableSize = ImGui::GetContentRegionAvail();
 
     const bool show = ImGui::BeginTable("##log-table", 1, ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, tableSize);
@@ -121,12 +121,12 @@ void GuiContext::window_log_table()
     // Was the scroll bar at the bottom last frame?
     const bool wasAtBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY();
 
-    const ImGuiStyle &style = ImGui::GetStyle();
+    const ImGuiStyle& style = ImGui::GetStyle();
 
     // Height of log message list
     float messagesHeight = 0.0f;
 
-    for (const auto &message : logHistory)
+    for (const auto& message : logHistory)
     {
         if (!windowLog.showLevels[std::to_underlying(message.level)])
             continue;
@@ -154,7 +154,7 @@ void GuiContext::window_log_table()
     {
         using enum Logger::Level;
 
-        const Logger::MsgData &message = *it;
+        const Logger::MsgData& message = *it;
 
         // If we're ignoring this type of log message, skip this iteration.
         if (!windowLog.showLevels[std::to_underlying(message.level)])

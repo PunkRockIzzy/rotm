@@ -14,7 +14,7 @@ namespace rotm
 {
 namespace fs = std::filesystem;
 
-std::optional<std::string> write_scene(const Scene &scene, std::string_view sceneName)
+std::optional<std::string> write_scene(const Scene& scene, std::string_view sceneName)
 {
     const fs::path sceneRoot = SCENE_ROOT;
 

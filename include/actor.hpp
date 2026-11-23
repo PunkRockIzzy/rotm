@@ -25,7 +25,7 @@ namespace rotm
  */
 class Actor
 {
-  public: /* Methods */
+public: /* Methods */
     /**
      * @brief Construct a new Actor object at startPos.
      *
@@ -39,13 +39,13 @@ class Actor
 
     Actor() = delete;
 
-    Actor(const Actor &) = delete;
-    Actor &operator=(const Actor &) = delete;
+    Actor(const Actor&) = delete;
+    Actor& operator=(const Actor&) = delete;
 
-    Actor(Actor &&) noexcept = default;
-    Actor &operator=(Actor &&) noexcept = default;
+    Actor(Actor&&) noexcept = default;
+    Actor& operator=(Actor&&) noexcept = default;
 
-    virtual void update(double deltaTime, const Tilemap &tilemap, int tileSize)
+    virtual void update(double deltaTime, const Tilemap& tilemap, int tileSize)
     {
         ZoneScopedN("Actor::update");
 
@@ -67,13 +67,13 @@ class Actor
         position.y += velocity.y * deltaTime;
     }
 
-  public: /* Fields */
+public: /* Fields */
     // Position in world space.
     Vector2 position;
     // Movement speed in pixels/second.
     Vector2 velocity = {0.0f, 0.0f};
 
-  protected:
+protected:
     // Position in world space on last frame.
     Vector2 m_lastPosition = position;
 };
@@ -84,20 +84,20 @@ class Actor
  */
 class SpriteActor : public Actor
 {
-  public: /* Static properties */
+public: /* Static properties */
     // How far to inset a given corner when checking collision against a given surface.
     static constexpr float CORNER_INSET = 0.5f;
     // How far to extend collision point when checking collision against a given surface.
     static constexpr float PROBE_DIST = 0.00001f;
 
-  public: /* Methods */
+public: /* Methods */
     /**
      * @brief Construct a new Sprite Actor object at startPos, with sprite using spriteTexture.
      *
      * @param startPos Initial position in world space.
      * @param spriteTexture Texture for initializing sprite.
      */
-    SpriteActor(Vector2 startPos, std::shared_ptr<TextureResource> &&spriteTexture)
+    SpriteActor(Vector2 startPos, std::shared_ptr<TextureResource>&& spriteTexture)
         : Actor(startPos), sprite(std::move(spriteTexture))
     {
     }
@@ -107,12 +107,12 @@ class SpriteActor : public Actor
      *
      * @return const Sprite& Reference to m_sprite.
      */
-    virtual const Sprite &get_sprite() const
+    virtual const Sprite& get_sprite() const
     {
         return sprite;
     }
 
-    virtual void update(double deltaTime, const Tilemap &tilemap, int tileSize)
+    virtual void update(double deltaTime, const Tilemap& tilemap, int tileSize)
     {
         ZoneScopedN("SpriteActor::update");
 
@@ -130,7 +130,7 @@ class SpriteActor : public Actor
     {
         ZoneScopedN("SpriteActor::get_rec");
 
-        const Texture2D &texture = sprite.get_texture();
+        const Texture2D& texture = sprite.get_texture();
         const Vector2 textureSize = {static_cast<float>(texture.width), static_cast<float>(texture.height)};
 
         return {pos.x, pos.y, textureSize.x * scale.x, textureSize.y * scale.y};
@@ -181,13 +181,13 @@ class SpriteActor : public Actor
         return {rec.x + rec.width, rec.y + rec.height};
     }
 
-    virtual std::optional<GlobalTileCoord> check_tile_collision(Vector2 point, const Tilemap &tilemap,
+    virtual std::optional<GlobalTileCoord> check_tile_collision(Vector2 point, const Tilemap& tilemap,
                                                                 int tileSize) const
     {
         ZoneScopedN("SpriteActor::check_tile_collision");
 
         const GlobalTileCoord tileCoord = point_to_tile(point, tileSize);
-        const TileData *tileData = tilemap.get_tile(tileCoord);
+        const TileData* tileData = tilemap.get_tile(tileCoord);
 
         if (tileData and tileData->id != TileData::ID_NULL)
             return tileCoord;
@@ -195,7 +195,7 @@ class SpriteActor : public Actor
         return std::nullopt;
     }
 
-    virtual std::optional<GlobalTileCoord> check_surface_collision(Vector2 pos, Vector2 posLast, const Tilemap &tilemap,
+    virtual std::optional<GlobalTileCoord> check_surface_collision(Vector2 pos, Vector2 posLast, const Tilemap& tilemap,
                                                                    int tileSize) const
     {
         static constexpr std::size_t SUBDIVISIONS = 20;
@@ -214,7 +214,7 @@ class SpriteActor : public Actor
             testPoints.emplace_back(x, y);
         }
 
-        for (const Vector2 &testPoint : testPoints)
+        for (const Vector2& testPoint : testPoints)
         {
             std::optional<GlobalTileCoord> result = check_tile_collision(testPoint, tilemap, tileSize);
 
@@ -225,7 +225,7 @@ class SpriteActor : public Actor
         return std::nullopt;
     }
 
-    virtual std::optional<GlobalTileCoord> touching_ground(const Tilemap &tilemap, int tileSize) const
+    virtual std::optional<GlobalTileCoord> touching_ground(const Tilemap& tilemap, int tileSize) const
     {
         ZoneScopedN("SpriteActor::touching_ground");
 
@@ -252,7 +252,7 @@ class SpriteActor : public Actor
         return std::nullopt;
     }
 
-    virtual std::optional<GlobalTileCoord> touching_ceiling(const Tilemap &tilemap, int tileSize)
+    virtual std::optional<GlobalTileCoord> touching_ceiling(const Tilemap& tilemap, int tileSize)
     {
         ZoneScopedN("SpriteActor::touching_ceiling");
 
@@ -279,7 +279,7 @@ class SpriteActor : public Actor
         return std::nullopt;
     }
 
-    virtual std::optional<GlobalTileCoord> touching_leftwall(const Tilemap &tilemap, int tileSize)
+    virtual std::optional<GlobalTileCoord> touching_leftwall(const Tilemap& tilemap, int tileSize)
     {
         ZoneScopedN("SpriteActor::touching_leftwall");
 
@@ -306,7 +306,7 @@ class SpriteActor : public Actor
         return std::nullopt;
     }
 
-    virtual std::optional<GlobalTileCoord> touching_rightwall(const Tilemap &tilemap, int tileSize)
+    virtual std::optional<GlobalTileCoord> touching_rightwall(const Tilemap& tilemap, int tileSize)
     {
         ZoneScopedN("SpriteActor::touching_rightwall");
 
@@ -333,7 +333,7 @@ class SpriteActor : public Actor
         return std::nullopt;
     }
 
-  public:
+public:
     // Contains actor's graphical representation.
     Sprite sprite;
     // Multiplier of size relative to sprite texture.

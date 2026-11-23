@@ -9,7 +9,7 @@
 
 namespace rotm
 {
-Game::Game(Core &coreRef)
+Game::Game(Core& coreRef)
     : CoreModule(coreRef), m_player({0.0f, 0.0f}, core.resources.fetch_texture("resources/colon3.png"))
 {
     auto result = read_scene("test scene");
@@ -25,7 +25,7 @@ Game::Game(Core &coreRef)
     m_scene = std::make_unique<Scene>(Tileset{std::move(tilesetAtlas), sceneData.tilesetMetadata},
                                       sceneData.tilesetPath, std::move(sceneData.tilemap));
 
-    Camera2D &cam = m_scene->camera;
+    Camera2D& cam = m_scene->camera;
 
     cam.rotation = 0.0f;
     cam.zoom = 4.0f;
@@ -42,8 +42,8 @@ void Game::update()
     if (!m_scene)
         throw exception::Base("Game: Missing scene!");
 
-    Tilemap &tilemap = m_scene->tilemap;
-    const Tileset &tileset = m_scene->tileset;
+    Tilemap& tilemap = m_scene->tilemap;
+    const Tileset& tileset = m_scene->tileset;
 
     const double deltaTime = core.get_delta_time();
 
@@ -70,7 +70,7 @@ void Game::draw()
 
     BeginMode2D(m_scene->camera);
 
-    TilemapRenderer &tilemapRenderer = m_scene->render.tilemap;
+    TilemapRenderer& tilemapRenderer = m_scene->render.tilemap;
     const int tileSize = m_scene->tileset.get_tile_size();
 
     tilemapRenderer.draw(tileSize);

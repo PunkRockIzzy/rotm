@@ -13,13 +13,13 @@ class Logger;
 
 class GuiContext
 {
-  public: /* Types */
+public: /* Types */
     struct Fonts
     {
-        ImFont *regular = nullptr;
-        ImFont *regularSmall = nullptr;
-        ImFont *monospace = nullptr;
-        ImFont *monospaceSmall = nullptr;
+        ImFont* regular = nullptr;
+        ImFont* regularSmall = nullptr;
+        ImFont* monospace = nullptr;
+        ImFont* monospaceSmall = nullptr;
     };
 
     // Holds variables related to the log window.
@@ -42,8 +42,8 @@ class GuiContext
         };
     };
 
-  public: /* Methods */
-    GuiContext(Core &coreRef);
+public: /* Methods */
+    GuiContext(Core& coreRef);
     ~GuiContext();
 
     /**
@@ -70,32 +70,32 @@ class GuiContext
      *
      * @return const Fonts& Data structure with UI fonts.
      */
-    const Fonts &get_fonts() const
+    const Fonts& get_fonts() const
     {
         return m_fonts;
     }
 
-  public: /* Fields */
+public: /* Fields */
     /**
      * @brief Data pertaining to log window.
      *
      */
     WindowLog windowLog;
 
-  private: /* Static properties */
+private: /* Static properties */
     static constexpr bool USE_DARK_THEME = true;
 
     static constexpr ImVec2 LOG_SIZE_DEFAULT = {640.0f, 480.0f};
 
-  private: /* Methods */
+private: /* Methods */
     void window_log_menubar();
     void window_log_table();
 
-  private: /* Fields */
-    Core &core;
-    Logger &logger;
+private: /* Fields */
+    Core& core;
+    Logger& logger;
 
-    ImGuiIO *io = nullptr;
+    ImGuiIO* io = nullptr;
 
     Fonts m_fonts;
 };

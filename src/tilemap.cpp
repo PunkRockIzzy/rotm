@@ -5,16 +5,16 @@ namespace rotm
 {
 // yes i'm aware some of these can throw, it's intentional
 
-const TileData &TilemapChunk::get_tile(LocalTileCoord coord) const
+const TileData& TilemapChunk::get_tile(LocalTileCoord coord) const
 {
     ZoneScopedN("TilemapChunk::get_tile");
 
     return m_data.at(coord.y).at(coord.x);
 }
 
-void TilemapChunk::set_tile(LocalTileCoord coord, const TileData &source)
+void TilemapChunk::set_tile(LocalTileCoord coord, const TileData& source)
 {
-    TileData &target = m_data.at(coord.y).at(coord.x);
+    TileData& target = m_data.at(coord.y).at(coord.x);
 
     if (target == source)
         return;
@@ -34,14 +34,14 @@ void TilemapChunk::set_tile(LocalTileCoord coord, const TileData &source)
 
 void TilemapChunk::clear()
 {
-    for (auto &row : m_data)
+    for (auto& row : m_data)
         row.fill(TileData{});
 
     m_tileCount = 0;
     m_dirty = true;
 }
 
-TilemapChunk *Tilemap::get_chunk(ChunkCoord coord)
+TilemapChunk* Tilemap::get_chunk(ChunkCoord coord)
 {
     ZoneScopedN("Tilemap::get_chunk");
 
@@ -53,7 +53,7 @@ TilemapChunk *Tilemap::get_chunk(ChunkCoord coord)
     return &it->second;
 }
 
-const TilemapChunk *Tilemap::get_chunk(ChunkCoord coord) const
+const TilemapChunk* Tilemap::get_chunk(ChunkCoord coord) const
 {
     ZoneScopedN("Tilemap::get_chunk");
     const auto it = m_data.find(coord);
@@ -64,12 +64,12 @@ const TilemapChunk *Tilemap::get_chunk(ChunkCoord coord) const
     return &it->second;
 }
 
-void Tilemap::set_chunk(ChunkCoord coord, const TilemapChunk &source)
+void Tilemap::set_chunk(ChunkCoord coord, const TilemapChunk& source)
 {
     m_data[coord] = source;
 }
 
-void Tilemap::set_chunk(ChunkCoord coord, TilemapChunk &&source) noexcept
+void Tilemap::set_chunk(ChunkCoord coord, TilemapChunk&& source) noexcept
 {
     m_data[coord] = std::move(source);
 }
@@ -79,11 +79,11 @@ void Tilemap::erase_chunk(ChunkCoord coord)
     m_data.erase(coord);
 }
 
-const TileData *Tilemap::get_tile(GlobalTileCoord coord) const
+const TileData* Tilemap::get_tile(GlobalTileCoord coord) const
 {
     ZoneScopedN("Tilemap::get_tile");
 
-    const TilemapChunk *chunk = get_chunk(coord.chunk);
+    const TilemapChunk* chunk = get_chunk(coord.chunk);
 
     if (!chunk)
         return nullptr;
@@ -91,9 +91,9 @@ const TileData *Tilemap::get_tile(GlobalTileCoord coord) const
     return &chunk->get_tile(coord.tile);
 }
 
-void Tilemap::set_tile(GlobalTileCoord coord, const TileData &source)
+void Tilemap::set_tile(GlobalTileCoord coord, const TileData& source)
 {
-    TilemapChunk &chunk = m_data[coord.chunk];
+    TilemapChunk& chunk = m_data[coord.chunk];
 
     chunk.set_tile(coord.tile, source);
 
@@ -107,7 +107,7 @@ std::size_t Tilemap::get_tile_count() const
 
     std::size_t out = 0;
 
-    for (const auto &[chunkCoord, chunk] : m_data)
+    for (const auto& [chunkCoord, chunk] : m_data)
     {
         (void)chunkCoord;
         out += chunk.get_tile_count();
@@ -116,7 +116,7 @@ std::size_t Tilemap::get_tile_count() const
     return out;
 }
 
-void Tilemap::stress_test(const TileData &tile)
+void Tilemap::stress_test(const TileData& tile)
 {
     static constexpr int MONOLITH_START = -499;
     static constexpr int MONOLITH_END = 500;
@@ -125,7 +125,7 @@ void Tilemap::stress_test(const TileData &tile)
     {
         for (int chunkX = MONOLITH_START; chunkX <= MONOLITH_END; ++chunkX)
         {
-            TilemapChunk &chunk = m_data[{chunkX, chunkY}];
+            TilemapChunk& chunk = m_data[{chunkX, chunkY}];
 
             for (int tileY = 0; tileY < static_cast<int>(TilemapChunk::SIZE); ++tileY)
             {
