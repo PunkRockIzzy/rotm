@@ -135,7 +135,7 @@ class Tilemap
     void set_tile(GlobalTileCoord coord, const TileData &source);
     std::size_t get_tile_count() const;
 
-    void stress_test();
+    void stress_test(const TileData &tile);
 
   private:
     Data m_data;

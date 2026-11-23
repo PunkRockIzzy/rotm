@@ -116,7 +116,7 @@ std::size_t Tilemap::get_tile_count() const
     return out;
 }
 
-void Tilemap::stress_test()
+void Tilemap::stress_test(const TileData &tile)
 {
     static constexpr int MONOLITH_START = -499;
     static constexpr int MONOLITH_END = 500;
@@ -131,7 +131,7 @@ void Tilemap::stress_test()
             {
                 for (int tileX = 0; tileX < static_cast<int>(TilemapChunk::SIZE); ++tileX)
                 {
-                    chunk.set_tile({tileX, tileY}, {.id = 0});
+                    chunk.set_tile({tileX, tileY}, tile);
                 }
             }
         }

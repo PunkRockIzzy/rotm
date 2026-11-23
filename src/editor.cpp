@@ -429,9 +429,9 @@ void Editor::begin_init_stress_test()
 
     logger.print_info()("Initializing stress test...");
 
-    m_stressTestJob = std::async(std::launch::async, []() -> Tilemap {
+    m_stressTestJob = std::async(std::launch::async, [this]() -> Tilemap {
         Tilemap out;
-        out.stress_test();
+        out.stress_test(m_windowSceneEditor.tileToPlace);
         return out;
     });
 
