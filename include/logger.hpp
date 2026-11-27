@@ -16,7 +16,7 @@ namespace rotm
 {
 class Logger
 {
-  public: /* Types */
+public: /* Types */
     enum class Level : unsigned short
     {
         All = 0u,
@@ -30,11 +30,11 @@ class Logger
 
     struct LogProxy
     {
-        Logger &logger;
+        Logger& logger;
         Level level;
         std::source_location location;
 
-        template <typename... Args> void operator()(std::format_string<Args...> message, Args &&...args) const
+        template <typename... Args> void operator()(std::format_string<Args...> message, Args&&... args) const
         {
             logger.print_impl(level, location, message, std::forward<Args>(args)...);
         }
@@ -48,18 +48,18 @@ class Logger
         Level level;
     };
 
-  public: /* Methods */
-    Logger(const time::Point &timeStart) : m_timeStart(timeStart)
+public: /* Methods */
+    Logger(const time::Point& timeStart) : m_timeStart(timeStart)
     {
     }
 
     Logger() = delete;
-    Logger(const Logger &) = delete;
-    Logger(Logger &&) = delete;
-    Logger &operator=(const Logger &) = delete;
-    Logger &operator=(Logger &&) = delete;
+    Logger(const Logger&) = delete;
+    Logger(Logger&&) = delete;
+    Logger& operator=(const Logger&) = delete;
+    Logger& operator=(Logger&&) = delete;
 
-    const std::deque<MsgData> &get_history() const
+    const std::deque<MsgData>& get_history() const
     {
         return m_msgHistory;
     }
@@ -121,9 +121,9 @@ class Logger
         };
     }
 
-  private: /* Methods */
+private: /* Methods */
     template <typename... Args>
-    void print_impl(Level level, std::source_location location, std::format_string<Args...> message, Args &&...args)
+    void print_impl(Level level, std::source_location location, std::format_string<Args...> message, Args&&... args)
     {
         namespace chrono = std::chrono;
 
@@ -138,7 +138,7 @@ class Logger
         const chrono::hh_mm_ss<chrono::milliseconds> timeDisplay{
             chrono::duration_cast<chrono::milliseconds>(timeNow - m_timeStart)};
 
-        const MsgData &msg =
+        const MsgData& msg =
             m_msgHistory.emplace_front(std::format(message, std::forward<Args>(args)...), timeDisplay, location, level);
 
         if (m_msgHistory.size() > HISTORY_MAX)
@@ -175,14 +175,14 @@ class Logger
 
         const std::string levelText = std::format("{:>10}", levelLabel);
 
-        std::println("{}{} {}{}{} {:80} {}@ {} ({}:{}){}", colorGray, msg.time, colorText, levelText,
-                     colorReset, msg.text, colorGray, funcName, location.file_name(), location.line(), colorReset);
+        std::println("{}{} {}{}{} {:80} {}@ {} ({}:{}){}", colorGray, msg.time, colorText, levelText, colorReset,
+                     msg.text, colorGray, funcName, location.file_name(), location.line(), colorReset);
     }
 
-  private: /* Fields */
+private: /* Fields */
     static constexpr std::size_t HISTORY_MAX = 5000;
 
-    const time::Point &m_timeStart;
+    const time::Point& m_timeStart;
 
     std::deque<MsgData> m_msgHistory;
 

@@ -1,6 +1,7 @@
 #include "editor.hpp"
 #include "core.hpp"
 #include "exception.hpp"
+#include "game.hpp"
 #include "gui_context.hpp"
 #include "logger.hpp"
 #include "renderer_tilemap.hpp"
@@ -17,7 +18,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <deque>
 #include <expected>
 #include <filesystem>
 #include <format>
@@ -27,7 +27,6 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -42,7 +41,7 @@
 
 namespace rotm
 {
-Editor::Editor(Core &coreRef) : CoreModule(coreRef), logger(core.logger), resources(core.resources)
+Editor::Editor(Core& coreRef) : CoreModule(coreRef), logger(core.logger), resources(core.resources)
 {
     logger.print_info()("Initializing editor...");
 
@@ -60,8 +59,8 @@ Editor::Editor(Core &coreRef) : CoreModule(coreRef), logger(core.logger), resour
 
         m_windowStats.active = true;
 
-        m_windowLog.active = true;
-        m_windowLog.showLevels[to_underlying(Debug)] = true;
+        core.guiContext->windowLog.active = true;
+        core.guiContext->windowLog.showLevels[to_underlying(Debug)] = true;
     }
 }
 
@@ -83,8 +82,16 @@ void Editor::update()
 
     if (WindowShouldClose())
     {
-        m_wantExit = true;
-        return;
+        if (m_sceneUnsavedChanges)
+        {
+            m_openUnsavedScene = true;
+            m_unsavedSceneCallback = [this]() -> void { m_wantExit = true; };
+        }
+        else
+        {
+            m_wantExit = true;
+            return;
+        }
     }
 
     if (m_saveJob.valid() && !is_save_in_progress())
@@ -129,7 +136,7 @@ void Editor::sync_gui()
     window_welcome();
     window_scene_editor();
     window_stats();
-    window_log();
+    core.guiContext->window_log();
 
     // popup_new();
     popup_enter_tileset_name();
@@ -138,6 +145,9 @@ void Editor::sync_gui()
 
     popup_open_scene();
     popup_save_scene();
+
+    popup_init_stress_test();
+    popup_unsaved_scene();
 
     ImGui::PopStyleColor(4);
 }
@@ -174,18 +184,18 @@ void Editor::cfg_apply()
 }
 
 template <typename T>
-void ini_write(mINI::INIStructure &ini, const std::string &section, const std::string &key, T value)
+void ini_write(mINI::INIStructure& ini, const std::string& section, const std::string& key, T value)
 {
     ini[section][key] = std::to_string(value);
 }
 
-template <> void ini_write(mINI::INIStructure &ini, const std::string &section, const std::string &key, bool value)
+template <> void ini_write(mINI::INIStructure& ini, const std::string& section, const std::string& key, bool value)
 {
     ini[section][key] = std::to_string(static_cast<int>(value));
 }
 
-void ini_read_int(Logger &logger, const mINI::INIStructure &ini, const std::string &section, const std::string &key,
-                  int &target)
+void ini_read_int(Logger& logger, const mINI::INIStructure& ini, const std::string& section, const std::string& key,
+                  int& target)
 {
     if (!ini.has(section))
         return logger.print_warning()("INI missing section. (section={})", section);
@@ -203,7 +213,7 @@ void ini_read_int(Logger &logger, const mINI::INIStructure &ini, const std::stri
 
         logger.print_info()("Loaded INI value. (section={}, key={}, value={})", section, key, target);
     }
-    catch (const std::invalid_argument &)
+    catch (const std::invalid_argument&)
     {
         logger.print_warning()("INI value is not an integer. (section={}, key={}, value={})", section, key, valueStr);
     }
@@ -226,13 +236,13 @@ bool Editor::ini_load()
     mINI::INIStructure ini;
     file.read(ini);
 
-    auto readWindowInt = [&](const std::string &key, int &target) { ini_read_int(logger, ini, "Window", key, target); };
+    auto readWindowInt = [&](const std::string& key, int& target) { ini_read_int(logger, ini, "Window", key, target); };
 
     readWindowInt("iPosX", m_cfg.window.x);
     readWindowInt("iPosY", m_cfg.window.y);
     readWindowInt("iSizeX", m_cfg.window.width);
     readWindowInt("iSizeY", m_cfg.window.height);
-    readWindowInt("bMaximized", reinterpret_cast<int &>(m_cfg.window.maximized));
+    readWindowInt("bMaximized", reinterpret_cast<int&>(m_cfg.window.maximized));
 
     return true;
 }
@@ -247,7 +257,7 @@ void Editor::ini_save()
 
     mINI::INIStructure ini;
 
-    auto writeWindowInt = [&ini](const std::string &key, int value) { ini_write(ini, "Window", key, value); };
+    auto writeWindowInt = [&ini](const std::string& key, int value) { ini_write(ini, "Window", key, value); };
 
     writeWindowInt("iPosX", m_cfg.window.x);
     writeWindowInt("iPosY", m_cfg.window.y);
@@ -269,13 +279,13 @@ Vector2 Editor::get_camera_offset()
                    .y = static_cast<float>(m_sceneView.texture.height) * 0.5f};
 }
 
-void Editor::init_scene(const TilesetMetadata &tilesetMetadata)
+void Editor::init_scene(const TilesetMetadata& tilesetMetadata)
 {
     init_scene(tilesetMetadata, Tilemap{});
     m_sceneNeverSaved = true;
 }
 
-void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilemap)
+void Editor::init_scene(const TilesetMetadata& tilesetMetadata, Tilemap&& tilemap)
 {
     m_scene = std::make_unique<Scene>(Tileset{std::move(m_tilesetAtlas), tilesetMetadata}, m_tilesetFilename,
                                       std::move(tilemap));
@@ -293,13 +303,32 @@ void Editor::init_scene(const TilesetMetadata &tilesetMetadata, Tilemap &&tilema
     }
 
     write_tileset_metadata(m_scene->tileset, m_tilesetFilename);
+
+    window_stats_refresh_tile_count();
+
+    // find first valid tile
+    const std::vector<bool>& usableTiles = m_scene->tileset.get_usable_tiles();
+    for (std::size_t i = 0; i < usableTiles.size(); ++i)
+    {
+        if (usableTiles.at(i))
+        {
+            m_windowSceneEditor.tileToPlace.id = static_cast<int>(i);
+            break;
+        }
+    }
 }
 
 void Editor::destroy_scene()
 {
+    if (m_sceneUnsavedChanges)
+    {
+        m_openUnsavedScene = true;
+        m_unsavedSceneCallback = [this]() -> void { destroy_scene(); };
+        return;
+    }
+
     m_scene.reset();
     m_editHistory.clear();
-    m_sceneUnsavedChanges = false;
 }
 
 void Editor::begin_save_scene()
@@ -400,16 +429,19 @@ void Editor::begin_init_stress_test()
 
     logger.print_info()("Initializing stress test...");
 
-    m_stressTestJob = std::async(std::launch::async, []() -> Tilemap {
+    m_stressTestJob = std::async(std::launch::async, [this]() -> Tilemap {
         Tilemap out;
-        out.stress_test();
+        out.stress_test(m_windowSceneEditor.tileToPlace);
         return out;
     });
+
+    m_openInitStressTest = true;
 }
 
 void Editor::end_init_stress_test()
 {
     m_scene->tilemap = m_stressTestJob.get();
+    window_stats_refresh_tile_count();
 }
 
 bool Editor::is_init_stress_test_in_progress()
@@ -430,6 +462,18 @@ void Editor::save_scene()
     begin_save_scene();
 }
 
+void Editor::switch_to_game()
+{
+    try
+    {
+        core.request_module_transition(std::make_unique<Game>(core));
+    }
+    catch (const exception::Base& e)
+    {
+        logger.print_error()("Failed to switch to game module.");
+    }
+}
+
 bool Editor::load_tileset_atlas()
 {
     try
@@ -438,7 +482,7 @@ bool Editor::load_tileset_atlas()
 
         return true;
     }
-    catch (const exception::Base &e)
+    catch (const exception::Base& e)
     {
         m_tilesetLoadErr = e.what();
     }
@@ -521,7 +565,7 @@ void Editor::handle_shortcuts()
             switch (keyPressed)
             {
             case KEY_GRAVE:
-                m_windowLog.active = !m_windowLog.active;
+                core.guiContext->windowLog.active = !core.guiContext->windowLog.active;
                 break;
 
             case KEY_F3:
@@ -529,10 +573,24 @@ void Editor::handle_shortcuts()
                 break;
 
             case KEY_F4: {
-                TilemapRenderer &renderer = m_scene->render.tilemap;
+                TilemapRenderer& renderer = m_scene->render.tilemap;
 
                 renderer.showChunkBorders = !renderer.showChunkBorders;
+
+                break;
             }
+            case KEY_HOME:
+                if (m_sceneUnsavedChanges)
+                {
+                    m_openUnsavedScene = true;
+                    m_unsavedSceneCallback = [this]() -> void { switch_to_game(); };
+                }
+                else
+                {
+                    switch_to_game();
+                }
+
+                break;
             }
         }
 
@@ -540,7 +598,7 @@ void Editor::handle_shortcuts()
     }
 }
 
-void Editor::use_tool_at(const GlobalTileCoord &coord)
+void Editor::use_tool_at(const GlobalTileCoord& coord)
 {
     using enum EditTool;
 
@@ -560,11 +618,11 @@ void Editor::use_tool_at(const GlobalTileCoord &coord)
     }
 }
 
-void Editor::tool_pencil(const GlobalTileCoord &coord)
+void Editor::tool_pencil(const GlobalTileCoord& coord)
 {
     const AbsoluteTileCoord coordAbs = global_to_absolute(coord);
-    const int &width = m_windowSceneEditor.pencilTileWidth;
-    const int &height = m_windowSceneEditor.pencilTileHeight;
+    const int& width = m_windowSceneEditor.pencilTileWidth;
+    const int& height = m_windowSceneEditor.pencilTileHeight;
 
     AbsoluteTileCoord tileMin = {coordAbs.x - (width / 2), coordAbs.y - (height / 2)};
 
@@ -580,7 +638,7 @@ void Editor::tool_pencil(const GlobalTileCoord &coord)
         for (int x = tileMin.x; x <= tileMax.x; ++x)
         {
             const GlobalTileCoord c = absolute_to_global({x, y});
-            const TileData *prevPtr = m_scene->tilemap.get_tile(c);
+            const TileData* prevPtr = m_scene->tilemap.get_tile(c);
             const TileData previous = prevPtr ? *prevPtr : TileData{};
 
             record_tile_edit(c, previous, m_windowSceneEditor.tileToPlace);
@@ -588,9 +646,9 @@ void Editor::tool_pencil(const GlobalTileCoord &coord)
     }
 }
 
-void Editor::tool_eraser(const GlobalTileCoord &coord)
+void Editor::tool_eraser(const GlobalTileCoord& coord)
 {
-    const TileData *prevPtr = m_scene->tilemap.get_tile(coord);
+    const TileData* prevPtr = m_scene->tilemap.get_tile(coord);
 
     if (!prevPtr)
         return;
@@ -598,7 +656,7 @@ void Editor::tool_eraser(const GlobalTileCoord &coord)
     record_tile_edit(coord, *prevPtr, TileData{});
 }
 
-void Editor::record_tile_edit(const GlobalTileCoord &position, const TileData &previous, const TileData &replacement)
+void Editor::record_tile_edit(const GlobalTileCoord& position, const TileData& previous, const TileData& replacement)
 {
     const auto it = m_currentEditIndices.find(position);
 
@@ -615,16 +673,32 @@ void Editor::record_tile_edit(const GlobalTileCoord &position, const TileData &p
     m_currentEditIndices.emplace(position, idx);
 }
 
+void Editor::commit_tile_edit()
+{
+    m_currentCommand->apply(m_scene->tilemap);
+    m_editHistory.push(std::move(*m_currentCommand));
+    m_currentCommand.reset();
+    m_currentEditIndices.clear();
+
+    m_sceneUnsavedChanges = true;
+
+    window_stats_refresh_tile_count();
+}
+
 void Editor::undo()
 {
     m_editHistory.undo(m_scene->tilemap);
     m_sceneUnsavedChanges = true;
+
+    window_stats_refresh_tile_count();
 }
 
 void Editor::redo()
 {
     m_editHistory.redo(m_scene->tilemap);
     m_sceneUnsavedChanges = true;
+
+    window_stats_refresh_tile_count();
 }
 
 void Editor::draw_tile_cursor()
@@ -643,8 +717,8 @@ void Editor::draw_tile_cursor()
     switch (m_editTool)
     {
     case Pencil: {
-        const int &width = m_windowSceneEditor.pencilTileWidth;
-        const int &height = m_windowSceneEditor.pencilTileHeight;
+        const int& width = m_windowSceneEditor.pencilTileWidth;
+        const int& height = m_windowSceneEditor.pencilTileHeight;
 
         AbsoluteTileCoord tileMin = {coordAbs.x - (width / 2), coordAbs.y - (height / 2)};
         AbsoluteTileCoord tileMax = {coordAbs.x + (width / 2), coordAbs.y + (height / 2)};
@@ -671,7 +745,7 @@ void Editor::draw_tile_cursor()
             if (m_tileCursorAnimCounter >= pi * 2.0)
                 m_tileCursorAnimCounter = 0;
 
-            for (const Rectangle &rec : recs)
+            for (const Rectangle& rec : recs)
             {
                 DrawRectangleLinesEx(rec, 2.0f, Fade(WHITE, 0.5f));
             }
@@ -684,8 +758,8 @@ void Editor::draw_tile_cursor()
 
     case Eraser: {
         {
-            const int &width = m_windowSceneEditor.eraserTileWidth;
-            const int &height = m_windowSceneEditor.eraserTileHeight;
+            const int& width = m_windowSceneEditor.eraserTileWidth;
+            const int& height = m_windowSceneEditor.eraserTileHeight;
 
             AbsoluteTileCoord tileMin = {coordAbs.x - (width / 2), coordAbs.y - (height / 2)};
             AbsoluteTileCoord tileMax = {coordAbs.x + (width / 2), coordAbs.y + (height / 2)};
@@ -712,7 +786,7 @@ void Editor::draw_tile_cursor()
                 if (m_tileCursorAnimCounter >= pi * 2.0)
                     m_tileCursorAnimCounter = 0;
 
-                for (const Rectangle &rec : recs)
+                for (const Rectangle& rec : recs)
                 {
                     DrawRectangleLinesEx(rec, 2.0f, Fade(WHITE, 0.5f));
                 }
@@ -736,14 +810,14 @@ void Editor::draw_edit_preview()
     switch (m_editTool)
     {
     case Pencil:
-        for (const TileEdit &edit : m_currentCommand->edits)
+        for (const TileEdit& edit : m_currentCommand->edits)
         {
             m_scene->render.tilemap.draw_tile(m_scene->tileset, edit.position, edit.replacement, Fade(WHITE, 0.33f));
         }
         break;
 
     case Eraser:
-        for (const TileEdit &edit : m_currentCommand->edits)
+        for (const TileEdit& edit : m_currentCommand->edits)
         {
             const int tileSize = m_scene->tileset.get_tile_size();
 
@@ -843,7 +917,15 @@ void Editor::main_menu_bar()
         }
         else if (clickedExit)
         {
-            m_wantExit = true;
+            if (m_sceneUnsavedChanges)
+            {
+                m_openUnsavedScene = true;
+                m_unsavedSceneCallback = [this]() { m_wantExit = true; };
+            }
+            else
+            {
+                m_wantExit = true;
+            }
         }
 
         ImGui::EndMenu();
@@ -883,7 +965,7 @@ void Editor::main_menu_bar()
 
         if (clickedShowChunkBorders)
         {
-            TilemapRenderer &renderer = m_scene->render.tilemap;
+            TilemapRenderer& renderer = m_scene->render.tilemap;
 
             renderer.showChunkBorders = !renderer.showChunkBorders;
         }
@@ -1027,7 +1109,7 @@ bool Editor::window_scene_editor_active()
 
 void Editor::window_scene_editor_handle_input()
 {
-    const Camera2D &cam = m_scene->camera;
+    const Camera2D& cam = m_scene->camera;
 
     const Vector2 mousePosScreen = GetMousePosition();
 
@@ -1079,11 +1161,7 @@ void Editor::window_scene_editor_handle_input()
         }
         else
         {
-            m_currentCommand->apply(m_scene->tilemap);
-            m_editHistory.push(std::move(*m_currentCommand));
-            m_currentCommand.reset();
-            m_currentEditIndices.clear();
-            m_sceneUnsavedChanges = true;
+            commit_tile_edit();
         }
     }
 
@@ -1102,7 +1180,7 @@ void Editor::window_scene_editor_handle_input()
     }
 }
 
-void Editor::child_scene_editor_toolbox(const ImVec2 &windowMax)
+void Editor::child_scene_editor_toolbox(const ImVec2& windowMax)
 {
     using enum EditTool;
 
@@ -1149,15 +1227,15 @@ void Editor::child_scene_editor_toolbox(const ImVec2 &windowMax)
     ImGui::EndChild();
 }
 
-void Editor::child_scene_editor_tilepalette(const ImVec2 &size)
+void Editor::child_scene_editor_tilepalette(const ImVec2& size)
 {
     const bool visible = ImGui::BeginChild("Tile Palette", size, ImGuiChildFlags_FrameStyle);
 
     if (!visible)
         return ImGui::EndChild();
 
-    const Tileset &tileset = m_scene->tileset;
-    const Texture2D &atlas = tileset.get_atlas();
+    const Tileset& tileset = m_scene->tileset;
+    const Texture2D& atlas = tileset.get_atlas();
 
     const float imageWidth = static_cast<float>(atlas.width);
     const float imageHeight = static_cast<float>(atlas.height);
@@ -1172,7 +1250,7 @@ void Editor::child_scene_editor_tilepalette(const ImVec2 &size)
 
     ImGui::Image(static_cast<ImTextureID>(atlas.id), imageSizeScaled);
 
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     const int tileSize = tileset.get_tile_size();
     const float tileSizeScaled = tileSize * scaleClamped;
@@ -1224,7 +1302,7 @@ void Editor::child_scene_editor_tilepalette(const ImVec2 &size)
     ImGui::EndChild();
 }
 
-void Editor::child_scene_editor_tooloptions(const ImVec2 &size)
+void Editor::child_scene_editor_tooloptions(const ImVec2& size)
 {
     using enum EditTool;
 
@@ -1281,13 +1359,12 @@ void Editor::window_stats()
 
     if (m_scene)
     {
-        const Tilemap &tilemap = m_scene->tilemap;
-        const TilemapRenderer &tilemapRenderer = m_scene->render.tilemap;
+        const TilemapRenderer& tilemapRenderer = m_scene->render.tilemap;
 
         ImGui::SeparatorText("Tilemap");
 
-        ImGui::Text("%zu tiles", tilemap.get_tile_count());
-        ImGui::Text("%zu chunks", tilemap.get_chunk_count());
+        ImGui::Text("%zu tiles", m_windowStats.tileCountLastEdit);
+        ImGui::Text("%zu chunks", m_windowStats.chunkCountLastEdit);
 
         ImGui::SeparatorText("Render");
 
@@ -1298,180 +1375,10 @@ void Editor::window_stats()
     ImGui::End();
 }
 
-void Editor::window_log()
+void Editor::window_stats_refresh_tile_count()
 {
-    if (!m_windowLog.active)
-        return;
-
-    ImGui::SetNextWindowSize(GUI_LOG_SIZE_DEFAULT, ImGuiCond_FirstUseEver);
-
-    const bool visible = ImGui::Begin("Log", &m_windowLog.active, ImGuiWindowFlags_MenuBar);
-
-    if (!visible)
-        return ImGui::End();
-
-    const GuiContext &guiContext = core.get_gui_context();
-    const GuiContext::Fonts &fonts = guiContext.get_fonts();
-
-    window_log_menubar();
-
-    ImGui::PushFont(m_windowLog.useLargeFont ? fonts.monospace : fonts.monospaceSmall);
-    window_log_table();
-    ImGui::PopFont();
-
-    ImGui::End();
-}
-
-void Editor::window_log_menubar()
-{
-    using enum Logger::Level;
-    using std::to_underlying;
-
-    if (!ImGui::BeginMenuBar())
-        return;
-
-    if (ImGui::BeginMenu("View"))
-    {
-        // Flyout with log level toggles
-        if (ImGui::BeginMenu("Log levels"))
-        {
-            ImGui::Checkbox("Debug", &m_windowLog.showLevels[to_underlying(Debug)]);
-            ImGui::Checkbox("Info", &m_windowLog.showLevels[to_underlying(Info)]);
-            ImGui::Checkbox("Warning", &m_windowLog.showLevels[to_underlying(Warning)]);
-            ImGui::Checkbox("Error", &m_windowLog.showLevels[to_underlying(Error)]);
-            ImGui::EndMenu();
-        }
-
-        ImGui::Checkbox("Show colors", &m_windowLog.showColors);
-        ImGui::Checkbox("Use large font", &m_windowLog.useLargeFont);
-
-        ImGui::EndMenu();
-    }
-
-    ImGui::EndMenuBar();
-}
-
-void Editor::window_log_table()
-{
-    static constexpr ImColor bgDebug = {0.3f, 0.1f, 0.3f, 1.0f};
-    static constexpr ImColor bgDebugAlt = {0.35f, 0.15f, 0.35f, 1.0f};
-
-    static constexpr ImColor bgInfo = {0.05f, 0.25f, 0.25f, 1.0f};
-    static constexpr ImColor bgInfoAlt = {0.1f, 0.3f, 0.3f, 1.0f};
-
-    static constexpr ImColor bgWarning = {0.3f, 0.3f, 0.1f, 1.0f};
-    static constexpr ImColor bgWarningAlt = {0.35f, 0.35f, 0.15f, 1.0f};
-
-    static constexpr ImColor bgError = {0.3f, 0.1f, 0.1f, 1.0f};
-    static constexpr ImColor bgErrorAlt = {0.35f, 0.15f, 0.15f, 1.0f};
-
-    const std::deque<Logger::MsgData> &logHistory = logger.get_history();
-    const ImVec2 tableSize = ImGui::GetContentRegionAvail();
-
-    const bool show = ImGui::BeginTable("##log-table", 1, ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, tableSize);
-
-    if (!show)
-        return;
-
-    // Was the scroll bar at the bottom last frame?
-    const bool wasAtBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY();
-
-    const ImGuiStyle &style = ImGui::GetStyle();
-
-    // Height of log message list
-    float messagesHeight = 0.0f;
-
-    for (const auto &message : logHistory)
-    {
-        if (!m_windowLog.showLevels[std::to_underlying(message.level)])
-            continue;
-
-        // const float textHeight = ImGui::CalcTextSize(message.text.c_str()).y;
-        const float rowTextHeight = ImGui::GetTextLineHeight();
-
-        messagesHeight += rowTextHeight + style.CellPadding.y * 2.0f;
-    }
-
-    // Fill unused space above short histories so the newest message sits at the bottom.
-    const float topSpacerHeight = tableSize.y > messagesHeight ? tableSize.y - messagesHeight : 0.0f;
-
-    if (topSpacerHeight > 0.0f)
-    {
-        ImGui::TableNextRow(0, topSpacerHeight);
-        ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, ImGui::GetColorU32(ImVec4{0.0f, 0.0f, 0.0f, 0.0f}));
-    }
-
-    // Use primary or secondary table BG color?
-    bool useAlternateBG = true;
-
-    // Show log messages (iterated in reverse, queue front is newest message).
-    for (auto it = logHistory.rbegin(); it != logHistory.rend(); ++it)
-    {
-        using enum Logger::Level;
-
-        const Logger::MsgData &message = *it;
-
-        // If we're ignoring this type of log message, skip this iteration.
-        if (!m_windowLog.showLevels[std::to_underlying(message.level)])
-            continue;
-
-        ImGui::TableNextRow();
-
-        if (m_windowLog.showColors)
-        {
-            // Alternate BG color per iteration.
-            useAlternateBG = !useAlternateBG;
-
-            // BG color for this row.
-            ImColor rowColor;
-
-            // Find BG color.
-            switch (message.level)
-            {
-            case Debug:
-                rowColor = useAlternateBG ? bgDebugAlt : bgDebug;
-                break;
-
-            case Warning:
-                rowColor = useAlternateBG ? bgWarningAlt : bgWarning;
-                break;
-
-            case Error:
-                rowColor = useAlternateBG ? bgErrorAlt : bgError;
-                break;
-
-            case Info:
-            default:
-                rowColor = useAlternateBG ? bgInfoAlt : bgInfo;
-                break;
-            }
-
-            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg0, rowColor);
-        }
-
-        // Select the table's first column so the following text is submitted to its cell.
-        ImGui::TableSetColumnIndex(0);
-        ImGui::TextUnformatted(message.text.c_str());
-
-        // Cleaned name of function that printed the message.
-        const std::string_view funcName = clean_function_name(message.location.function_name());
-
-        // Show tooltip with log metadata on hovering a message.
-        ImGui::SetItemTooltip("Level: %s\n"
-                              "Time: %02zi:%02zi:%02zi.%03zi\n"
-                              "Function: %.*s\n"
-                              "File: %s, line %u",
-                              Logger::level_to_string(message.level).data(), message.time.hours().count(),
-                              message.time.minutes().count(), message.time.seconds().count(),
-                              message.time.subseconds().count(), static_cast<int>(funcName.size()), funcName.data(),
-                              message.location.file_name(), message.location.line());
-    }
-
-    // If the scroll bar was at the bottom, autoscroll to the current bottom.
-    if (wasAtBottom)
-        ImGui::SetScrollHereY(1.0f);
-
-    ImGui::EndTable();
+    m_windowStats.tileCountLastEdit = m_scene->tilemap.get_tile_count();
+    m_windowStats.chunkCountLastEdit = m_scene->tilemap.get_chunk_count();
 }
 
 void Editor::popup_enter_tileset_name()
@@ -1568,7 +1475,7 @@ void Editor::popup_configure_tile_size()
     if (!active)
         return;
 
-    const Texture2D &atlasTexture = m_tilesetAtlas->get();
+    const Texture2D& atlasTexture = m_tilesetAtlas->get();
 
     const ImVec2 textureSizeScaled = {static_cast<float>(atlasTexture.width) * GUI_CONFIGURE_TILESET_TEX_SCALE,
                                       static_cast<float>(atlasTexture.height) * GUI_CONFIGURE_TILESET_TEX_SCALE};
@@ -1579,7 +1486,7 @@ void Editor::popup_configure_tile_size()
 
     ImGui::Image(static_cast<ImTextureID>(atlasTexture.id), textureSizeScaled);
 
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     const int actualTileSize = m_tileSizeInput * TILE_SIZE_FACTOR;
 
@@ -1643,7 +1550,7 @@ void Editor::popup_configure_tileset()
     if (!active)
         return;
 
-    const Texture2D &atlasTexture = m_tilesetAtlas->get();
+    const Texture2D& atlasTexture = m_tilesetAtlas->get();
 
     const ImVec2 textureSizeScaled = {static_cast<float>(atlasTexture.width) * GUI_CONFIGURE_TILESET_TEX_SCALE,
                                       static_cast<float>(atlasTexture.height) * GUI_CONFIGURE_TILESET_TEX_SCALE};
@@ -1656,7 +1563,7 @@ void Editor::popup_configure_tileset()
 
     const bool imageHovered = ImGui::IsItemHovered();
 
-    ImDrawList *drawList = ImGui::GetWindowDrawList();
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
 
     const int actualTileSize = m_tileSizeInput * TILE_SIZE_FACTOR;
 
@@ -1813,7 +1720,7 @@ void Editor::popup_open_scene_table()
         {
             const fs::directory_iterator sceneRoot{SCENE_ROOT};
 
-            for (const fs::path &sceneFolder : sceneRoot)
+            for (const fs::path& sceneFolder : sceneRoot)
             {
                 if (!fs::is_directory(sceneFolder))
                     continue;
@@ -1830,7 +1737,7 @@ void Editor::popup_open_scene_table()
             ImGui::TableSetColumnIndex(0);
             ImGui::TextUnformatted("Available scenes:");
 
-            for (const fs::path &scene : m_loadableScenes)
+            for (const fs::path& scene : m_loadableScenes)
             {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
@@ -1950,23 +1857,107 @@ void Editor::popup_init_stress_test()
     ImGui::EndPopup();
 }
 
-void Editor::TileEditCommand::apply(Tilemap &tilemap)
+void Editor::popup_unsaved_scene()
 {
-    for (const TileEdit &edit : edits)
+    if (m_openUnsavedScene)
+    {
+        ImGui::OpenPopup("Unsaved scene edits");
+        m_openUnsavedScene = false;
+    }
+
+    ImGui::SetNextWindowPos({static_cast<float>(GetScreenWidth()) * 0.5f, static_cast<float>(GetScreenHeight()) * 0.5f},
+                            ImGuiCond_Always, {0.5f, 0.5f});
+
+    const bool active = ImGui::BeginPopupModal("Unsaved scene edits", nullptr,
+                                               ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+    if (!active)
+        return;
+
+    if (m_unsavedSceneBeganSave)
+    {
+        if (is_save_in_progress())
+        {
+            ImGui::TextUnformatted("Saving...");
+        }
+        else if (m_sceneSaveErr.empty())
+        {
+            ImGui::CloseCurrentPopup();
+            m_unsavedSceneBeganSave = false;
+            m_unsavedSceneCallback();
+            m_unsavedSceneCallback = nullptr;
+        }
+        else
+        {
+            ImGui::TextUnformatted("Failed to save.");
+            ImGui::OpenPopup("Save failed");
+        }
+    }
+    else
+    {
+        ImGui::TextUnformatted("This scene has unsaved changes. Do you want to save?");
+
+        const bool pressedOK = ImGui::Button("Save");
+        ImGui::SameLine();
+        const bool pressedDontSave = ImGui::Button("Don't save");
+        ImGui::SameLine();
+        const bool pressedCancel = ImGui::Button("Cancel");
+
+        if (pressedOK)
+        {
+            m_unsavedSceneBeganSave = true;
+            begin_save_scene();
+        }
+        else if (pressedDontSave)
+        {
+            ImGui::CloseCurrentPopup();
+            m_sceneUnsavedChanges = false;
+            m_unsavedSceneCallback();
+            m_unsavedSceneCallback = nullptr;
+        }
+        else if (pressedCancel)
+        {
+            ImGui::CloseCurrentPopup();
+        }
+    }
+
+    const bool errorActive =
+        ImGui::BeginPopupModal("Save failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove);
+
+    if (errorActive)
+    {
+        ImGui::Text("%s", m_sceneSaveErr.c_str());
+
+        if (ImGui::Button("OK"))
+        {
+            m_unsavedSceneBeganSave = false;
+            m_sceneSaveErr.clear();
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    ImGui::EndPopup();
+}
+
+void Editor::TileEditCommand::apply(Tilemap& tilemap)
+{
+    for (const TileEdit& edit : edits)
     {
         tilemap.set_tile(edit.position, edit.replacement);
     }
 }
 
-void Editor::TileEditCommand::undo(Tilemap &tilemap)
+void Editor::TileEditCommand::undo(Tilemap& tilemap)
 {
-    for (const TileEdit &edit : edits)
+    for (const TileEdit& edit : edits)
     {
         tilemap.set_tile(edit.position, edit.previous);
     }
 }
 
-void Editor::TileEditCommand::redo(Tilemap &tilemap)
+void Editor::TileEditCommand::redo(Tilemap& tilemap)
 {
     apply(tilemap);
 }
@@ -1981,7 +1972,7 @@ void Editor::EditHistory::push(TileEditCommand command)
     ++m_cursor;
 }
 
-void Editor::EditHistory::undo(Tilemap &tilemap)
+void Editor::EditHistory::undo(Tilemap& tilemap)
 {
     if (!can_undo())
         return;
@@ -1990,7 +1981,7 @@ void Editor::EditHistory::undo(Tilemap &tilemap)
     m_commands.at(m_cursor).undo(tilemap);
 }
 
-void Editor::EditHistory::redo(Tilemap &tilemap)
+void Editor::EditHistory::redo(Tilemap& tilemap)
 {
     if (!can_redo())
         return;

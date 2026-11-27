@@ -18,8 +18,8 @@ struct ReadTilemapOutput
     std::filesystem::path tilesetFilename;
 };
 
-std::optional<std::string> write_tilemap(const Tilemap &tilemap, const std::filesystem::path &path,
-                                         const std::filesystem::path &tilesetPath);
+std::optional<std::string> write_tilemap(const Tilemap& tilemap, const std::filesystem::path& path,
+                                         const std::filesystem::path& tilesetPath);
 
-std::expected<ReadTilemapOutput, std::string> read_tilemap(const std::filesystem::path &path);
+std::expected<ReadTilemapOutput, std::string> read_tilemap(const std::filesystem::path& path);
 } // namespace rotm

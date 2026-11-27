@@ -78,7 +78,7 @@ inline GlobalTileCoord absolute_to_global(AbsoluteTileCoord coord)
     return {chunk, tile};
 }
 
-template <typename Fn> void for_each_tile_on_line(AbsoluteTileCoord start, AbsoluteTileCoord end, Fn &&callback)
+template <typename Fn> void for_each_tile_on_line(AbsoluteTileCoord start, AbsoluteTileCoord end, Fn&& callback)
 {
     using std::abs;
 

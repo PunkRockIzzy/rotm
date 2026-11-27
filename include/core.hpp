@@ -7,6 +7,7 @@
 #include "time.hpp"
 #include "version.hpp"
 
+#include <deque>
 #include <format>
 #include <memory>
 #include <string>
@@ -15,7 +16,7 @@ namespace rotm
 {
 class Core
 {
-  public: /* Types */
+public: /* Types */
     struct RaylibConfig
     {
         std::string windowTitle = std::format("RotM v{}.{}", version::MAJOR, version::MINOR);
@@ -27,16 +28,16 @@ class Core
         int logLevel = 4; // LOG_WARNING
     };
 
-  public:
+public:
     static constexpr int TICKS_PER_SECOND = 60;
 
-  public: /* Methods */
-    Core(int argc, char *argv[]);
+public: /* Methods */
+    Core(int argc, char* argv[]);
     ~Core();
 
     void run();
 
-    const time::Point &get_time_start() const
+    const time::Point& get_time_start() const
     {
         return m_timeStart;
     }
@@ -66,6 +67,11 @@ class Core
         return m_fps;
     }
 
+    void set_target_fps(int targetFPS)
+    {
+        m_raylibConfig.targetFPS = targetFPS;
+    }
+
     bool get_show_fps_counter() const
     {
         return m_showFPSCounter;
@@ -76,28 +82,31 @@ class Core
         m_showFPSCounter = enabled;
     }
 
-    GuiContext &get_gui_context()
-    {
-        return *m_guiContext;
-    }
-
-    const RaylibConfig &get_raylib_config() const
+    const RaylibConfig& get_raylib_config() const
     {
         return m_raylibConfig;
     }
 
-  private: /* Static properties */
+    void request_module_transition(std::unique_ptr<CoreModule>&& module)
+    {
+        m_moduleQueued = std::move(module);
+    }
+
+private: /* Static properties */
     static constexpr double SECONDS_PER_TICK = 1.0 / static_cast<double>(TICKS_PER_SECOND);
     static constexpr int MAX_TICKS_PER_FRAME = 4;
+    static constexpr std::size_t DELTA_HISTORY_MAX = 100;
 
-  private: /* Methods */
+private: /* Methods */
     void update();
     void tick();
     void draw();
 
     bool do_tick() const;
 
-    void parse_args(int argc, char *argv[]);
+    void wait_for_next_frame();
+
+    void parse_args(int argc, char* argv[]);
     void init_raylib();
     void shutdown_raylib();
 
@@ -105,38 +114,42 @@ class Core
     void handle_exception_run();
     void handle_exception_shutdown();
 
-    double calculate_delta_time();
+    double calculate_delta_time() const;
+    int calculate_fps() const;
 
     std::string generate_screenshot_filename();
 
-  private: /* Fields */
+private: /* Fields */
     const time::Point m_timeStart = time::Clock::now();
     time::Point m_timeLastFrame = m_timeStart;
 
     bool m_devMode = false;
 
     double m_deltaTime = 0.0;
+    std::deque<double> m_deltaHistory;
+    double m_deltaHistorySum = 0.0;
 
     int m_fps = 0;
-    unsigned long long m_frameCountPastSecond = 0;
     bool m_showFPSCounter = false;
 
     double m_secondsSinceTick = 0.0;
     unsigned long long m_tickCount = 0;
 
+    std::size_t m_busyCounter = 0;
+
     int m_lastWindowWidth = 0;
     int m_lastWindowHeight = 0;
     bool m_isFullscreen = false;
 
-    std::unique_ptr<GuiContext> m_guiContext;
-
     std::unique_ptr<CoreModule> m_moduleActive;
+    std::unique_ptr<CoreModule> m_moduleQueued;
 
     bool m_wantExit = false;
     RaylibConfig m_raylibConfig = RaylibConfig{};
 
-  public: /* Fields */
+public: /* Fields */
     Logger logger;
     ResourceManager resources;
+    std::unique_ptr<GuiContext> guiContext;
 };
 } // namespace rotm

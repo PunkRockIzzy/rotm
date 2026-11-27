@@ -43,8 +43,8 @@ struct TileFileData
 
 #pragma pack(pop)
 
-std::optional<std::string> write_tilemap(const Tilemap &tilemap, const std::filesystem::path &path,
-                                         const std::filesystem::path &tilesetPath)
+std::optional<std::string> write_tilemap(const Tilemap& tilemap, const std::filesystem::path& path,
+                                         const std::filesystem::path& tilesetPath)
 {
     const std::string filename = path.string();
     const std::string tilesetFilename = tilesetPath.string();
@@ -53,7 +53,7 @@ std::optional<std::string> write_tilemap(const Tilemap &tilemap, const std::file
     if (!file.good())
         return std::format("Failed to open file output stream. (filename={})", filename);
 
-    const Tilemap::Data &mapData = tilemap.get_data();
+    const Tilemap::Data& mapData = tilemap.get_data();
 
     FileHeader fileHeader;
     fileHeader.chunkCount = mapData.size();
@@ -63,7 +63,7 @@ std::optional<std::string> write_tilemap(const Tilemap &tilemap, const std::file
     if (!write_to_stream(file, fileHeader, &filepos))
         return std::format("Failed to write file header. (filename={}, filepos={:#010x})", filename, filepos);
 
-    for (const auto &[chunkCoord, chunk] : mapData)
+    for (const auto& [chunkCoord, chunk] : mapData)
     {
         ChunkHeader chunkHeader;
         chunkHeader.x = chunkCoord.x;
@@ -77,7 +77,7 @@ std::optional<std::string> write_tilemap(const Tilemap &tilemap, const std::file
         {
             for (int x = 0; x < static_cast<int>(TilemapChunk::SIZE); ++x)
             {
-                const TileData &tile = chunk.get_tile({x, y});
+                const TileData& tile = chunk.get_tile({x, y});
 
                 if (tile.id == TileData::ID_NULL)
                     continue;
@@ -98,7 +98,7 @@ std::optional<std::string> write_tilemap(const Tilemap &tilemap, const std::file
             "Failed to write tileset filename length. (filename={}, tilesetFilename={}, filepos={:#010x})", filename,
             tilesetFilename, filepos);
 
-    for (const char &c : tilesetFilename)
+    for (const char& c : tilesetFilename)
     {
         if (!write_to_stream(file, c, &filepos))
             return std::format("Failed to write tileset filename. (filename={}, tilesetFilename={}, filepos={:#010x})",
@@ -118,7 +118,7 @@ std::optional<std::string> write_tilemap(const Tilemap &tilemap, const std::file
     return std::nullopt;
 }
 
-std::expected<ReadTilemapOutput, std::string> read_tilemap(const std::filesystem::path &path)
+std::expected<ReadTilemapOutput, std::string> read_tilemap(const std::filesystem::path& path)
 {
     using err_t = std::unexpected<std::string>;
 
@@ -154,7 +154,7 @@ std::expected<ReadTilemapOutput, std::string> read_tilemap(const std::filesystem
             return err_t{
                 std::format("Chunk header tag is incorrect. (filename={}, filepos={:#010x})", filename, filepos)};
 
-        TilemapChunk &chunk = out.tilemap[{chunkHeader.x, chunkHeader.y}];
+        TilemapChunk& chunk = out.tilemap[{chunkHeader.x, chunkHeader.y}];
 
         for (uint32_t i = 0; i < chunkHeader.tileCount; ++i)
         {
@@ -183,7 +183,7 @@ std::expected<ReadTilemapOutput, std::string> read_tilemap(const std::filesystem
     std::string tilesetFilename;
     tilesetFilename.resize(tilesetFilenameLen, '\0');
 
-    char *tilesetFilenameData = tilesetFilename.data();
+    char* tilesetFilenameData = tilesetFilename.data();
 
     for (std::size_t i = 0; i < tilesetFilenameLen; ++i)
     {

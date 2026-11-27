@@ -111,7 +111,7 @@
     // Support custom frame control, only for advanced users
     // By default EndDrawing() does this job: draws everything + SwapScreenBuffer() + manage frame timing + PollInputEvents()
     // Enabling this flag allows manual control of the frame processes, use at your own risk
-    #define SUPPORT_CUSTOM_FRAME_CONTROL    0       // Disabled by default
+    #define SUPPORT_CUSTOM_FRAME_CONTROL    1       // Disabled by default
 #endif
 #ifndef SUPPORT_CLIPBOARD_IMAGE
     // Support for clipboard image loading

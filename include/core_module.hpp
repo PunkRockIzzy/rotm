@@ -6,18 +6,18 @@ class Core;
 
 class CoreModule
 {
-  public:
-    CoreModule(Core &coreRef) : core(coreRef)
+public:
+    CoreModule(Core& coreRef) : core(coreRef)
     {
     }
 
     virtual ~CoreModule() = default;
 
     CoreModule() = delete;
-    CoreModule(const CoreModule &) = delete;
-    CoreModule(CoreModule &&) = delete;
-    CoreModule &operator=(const CoreModule &) = delete;
-    CoreModule &operator=(CoreModule &&) = delete;
+    CoreModule(const CoreModule&) = delete;
+    CoreModule(CoreModule&&) = delete;
+    CoreModule& operator=(const CoreModule&) = delete;
+    CoreModule& operator=(CoreModule&&) = delete;
 
     virtual void update()
     {
@@ -40,8 +40,8 @@ class CoreModule
         return m_wantExit;
     }
 
-  protected:
-    Core &core;
+protected:
+    Core& core;
     bool m_wantExit = false;
 };
 } // namespace rotm

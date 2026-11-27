@@ -19,7 +19,7 @@ struct GlobalTileCoord
     ChunkCoord chunk;
     LocalTileCoord tile;
 
-    constexpr auto operator<=>(const GlobalTileCoord &other) const noexcept = default;
+    constexpr auto operator<=>(const GlobalTileCoord& other) const noexcept = default;
 };
 
 struct TileData
@@ -30,31 +30,31 @@ struct TileData
 
     IDType id = ID_NULL;
 
-    bool operator==(const TileData &other) const noexcept = default;
+    bool operator==(const TileData& other) const noexcept = default;
 };
 
 class TilemapChunk
 {
-  public: /* Static properties */
+public: /* Static properties */
     static constexpr std::size_t SIZE = 32;
 
-  public: /* Types */
+public: /* Types */
     using Data = std::array<std::array<TileData, SIZE>, SIZE>;
 
-  public: /* Methods */
+public: /* Methods */
     TilemapChunk() = default;
     ~TilemapChunk() = default;
 
-    TilemapChunk(const TilemapChunk &other) : m_data(other.m_data), m_tileCount(other.m_tileCount), m_dirty(true)
+    TilemapChunk(const TilemapChunk& other) : m_data(other.m_data), m_tileCount(other.m_tileCount), m_dirty(true)
     {
     }
 
-    TilemapChunk(TilemapChunk &&other) noexcept
+    TilemapChunk(TilemapChunk&& other) noexcept
         : m_data(std::move(other.m_data)), m_tileCount(other.m_tileCount), m_dirty(true)
     {
     }
 
-    TilemapChunk &operator=(const TilemapChunk &other)
+    TilemapChunk& operator=(const TilemapChunk& other)
     {
         m_data = other.m_data;
         m_tileCount = other.m_tileCount;
@@ -63,7 +63,7 @@ class TilemapChunk
         return *this;
     }
 
-    TilemapChunk &operator=(TilemapChunk &&other) noexcept
+    TilemapChunk& operator=(TilemapChunk&& other) noexcept
     {
         m_data = std::move(other.m_data);
         m_tileCount = other.m_tileCount;
@@ -72,7 +72,7 @@ class TilemapChunk
         return *this;
     }
 
-    const Data &get_data() const
+    const Data& get_data() const
     {
         return m_data;
     }
@@ -95,12 +95,12 @@ class TilemapChunk
         m_dirty = dirty;
     }
 
-    const TileData &get_tile(LocalTileCoord coord) const;
-    void set_tile(LocalTileCoord coord, const TileData &source);
+    const TileData& get_tile(LocalTileCoord coord) const;
+    void set_tile(LocalTileCoord coord, const TileData& source);
 
     void clear();
 
-  private: /* Fields */
+private: /* Fields */
     Data m_data;
     std::size_t m_tileCount = 0;
     bool m_dirty = true;
@@ -108,36 +108,36 @@ class TilemapChunk
 
 class Tilemap
 {
-  public:
+public:
     using Data = std::unordered_map<ChunkCoord, TilemapChunk>;
 
-    const Data &get_data() const
+    const Data& get_data() const
     {
         return m_data;
     }
 
-    TilemapChunk &operator[](ChunkCoord coord)
+    TilemapChunk& operator[](ChunkCoord coord)
     {
         return m_data[coord];
     }
 
-    TilemapChunk *get_chunk(ChunkCoord coord);
-    const TilemapChunk *get_chunk(ChunkCoord coord) const;
-    void set_chunk(ChunkCoord coord, const TilemapChunk &source);
-    void set_chunk(ChunkCoord coord, TilemapChunk &&source) noexcept;
+    TilemapChunk* get_chunk(ChunkCoord coord);
+    const TilemapChunk* get_chunk(ChunkCoord coord) const;
+    void set_chunk(ChunkCoord coord, const TilemapChunk& source);
+    void set_chunk(ChunkCoord coord, TilemapChunk&& source) noexcept;
     void erase_chunk(ChunkCoord coord);
     std::size_t get_chunk_count() const
     {
         return m_data.size();
     }
 
-    const TileData *get_tile(GlobalTileCoord coord) const;
-    void set_tile(GlobalTileCoord coord, const TileData &source);
+    const TileData* get_tile(GlobalTileCoord coord) const;
+    void set_tile(GlobalTileCoord coord, const TileData& source);
     std::size_t get_tile_count() const;
 
-    void stress_test();
+    void stress_test(const TileData& tile);
 
-  private:
+private:
     Data m_data;
 };
 } // namespace rotm
@@ -146,7 +146,7 @@ namespace std
 {
 template <> struct hash<rotm::GlobalTileCoord>
 {
-    static std::size_t operator()(const rotm::GlobalTileCoord &coord) noexcept
+    static std::size_t operator()(const rotm::GlobalTileCoord& coord) noexcept
     {
         std::size_t seed = 0;
 
@@ -158,8 +158,8 @@ template <> struct hash<rotm::GlobalTileCoord>
         return seed;
     }
 
-  private:
-    template <typename T> static void hash_combine(std::size_t &seed, const T &value) noexcept
+private:
+    template <typename T> static void hash_combine(std::size_t& seed, const T& value) noexcept
     {
         seed ^= std::hash<T>{}(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }

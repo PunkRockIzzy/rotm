@@ -1,7 +1,9 @@
 #include "core.hpp"
 #include "editor.hpp"
 #include "exception.hpp"
+// #include "game.hpp"
 #include "gui_context.hpp"
+#include "time.hpp"
 #include "version.hpp"
 
 #include <chrono>
@@ -10,6 +12,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #include <raylib.h>
@@ -19,7 +22,7 @@ namespace rotm
 {
 using StartupModule = Editor;
 
-Core::Core(int argc, char *argv[]) : logger(m_timeStart), resources(logger)
+Core::Core(int argc, char* argv[]) : logger(m_timeStart), resources(logger)
 {
     logger.print_info()("RotM v{}.{}, build date " __DATE__, version::MAJOR, version::MINOR);
 
@@ -31,11 +34,11 @@ Core::Core(int argc, char *argv[]) : logger(m_timeStart), resources(logger)
 
         init_raylib();
 
-        m_guiContext = std::make_unique<GuiContext>(*this);
+        guiContext = std::make_unique<GuiContext>(*this);
 
         m_moduleActive = std::make_unique<StartupModule>(*this);
     }
-    catch (const std::exception &)
+    catch (const std::exception&)
     {
         handle_exception_init();
     }
@@ -51,14 +54,14 @@ Core::~Core()
     {
         m_moduleActive.reset();
 
-        m_guiContext.reset();
+        guiContext.reset();
 
         logger.print_info()("Clearing resources...");
         resources.clear();
 
         shutdown_raylib();
     }
-    catch (const std::exception &)
+    catch (const std::exception&)
     {
         handle_exception_shutdown();
     }
@@ -72,13 +75,21 @@ void Core::run()
     {
         while (!m_wantExit)
         {
+            PollInputEvents();
+
             if (!m_moduleActive)
                 throw exception::NoActiveCoreModule();
 
-            m_deltaTime = calculate_delta_time();
-            m_secondsSinceTick += m_deltaTime;
+            if (m_moduleQueued)
+            {
+                m_moduleActive.reset();
+                m_moduleActive = std::move(m_moduleQueued);
+            }
 
+            m_deltaTime = calculate_delta_time();
             m_timeLastFrame = time::Clock::now();
+
+            m_secondsSinceTick += m_deltaTime;
 
             update();
 
@@ -101,12 +112,14 @@ void Core::run()
 
             draw();
 
-            ++m_frameCountPastSecond;
+            SwapScreenBuffer();
+
+            wait_for_next_frame();
 
             FrameMark;
         }
     }
-    catch (const std::exception &)
+    catch (const std::exception&)
     {
         handle_exception_run();
     }
@@ -115,6 +128,17 @@ void Core::run()
 void Core::update()
 {
     ZoneScopedN("Core::update");
+
+    if (m_deltaHistory.size() >= DELTA_HISTORY_MAX)
+    {
+        m_deltaHistorySum -= m_deltaHistory.front();
+        m_deltaHistory.pop_front();
+    }
+
+    m_deltaHistory.push_back(m_deltaTime);
+    m_deltaHistorySum += m_deltaTime;
+
+    m_fps = calculate_fps();
 
     m_moduleActive->update();
 
@@ -166,9 +190,6 @@ void Core::tick()
                 logger.print_info()("Purged {} unused textures.", texturesPurged);
             }
         }
-
-        m_fps = m_frameCountPastSecond;
-        m_frameCountPastSecond = 0;
     }
 
     ++m_tickCount;
@@ -183,9 +204,9 @@ void Core::draw()
 
     m_moduleActive->draw();
 
-    m_guiContext->begin_frame();
+    guiContext->begin_frame();
     m_moduleActive->sync_gui();
-    m_guiContext->end_frame();
+    guiContext->end_frame();
 
     if (m_showFPSCounter)
         DrawText(TextFormat("%i FPS", m_fps), 10, 10, 20, Fade(WHITE, 0.33f));
@@ -198,7 +219,31 @@ bool Core::do_tick() const
     return m_secondsSinceTick >= SECONDS_PER_TICK;
 }
 
-bool read_int_arg(std::string_view arg, const std::string_view &argValue, int &target)
+void Core::wait_for_next_frame()
+{
+    using namespace std::chrono;
+    using namespace std::chrono_literals;
+
+    static constexpr milliseconds SLEEP_MARGIN = 5ms;
+
+    const int& targetFPS = m_raylibConfig.targetFPS;
+
+    if (targetFPS == 0)
+        return;
+
+    const duration<double> targetFrameTime{1.0 / static_cast<double>(m_raylibConfig.targetFPS)};
+
+    const time::Point timeNextFrame = m_timeLastFrame + duration_cast<time::Duration>(targetFrameTime);
+
+    std::this_thread::sleep_until(timeNextFrame - SLEEP_MARGIN);
+
+    while (time::Clock::now() < timeNextFrame)
+    {
+        ++m_busyCounter;
+    }
+}
+
+bool read_int_arg(std::string_view arg, const std::string_view& argValue, int& target)
 {
     if (argValue.size() <= arg.size())
         return false;
@@ -214,7 +259,7 @@ bool read_int_arg(std::string_view arg, const std::string_view &argValue, int &t
 
         return true;
     }
-    catch (const std::exception &)
+    catch (const std::exception&)
     {
         return false;
     }
@@ -232,7 +277,7 @@ bool read_int_arg(std::string_view arg, const std::string_view &argValue, int &t
     -f or --target-fps [int]
     --rl-log-level [int]
 */
-void Core::parse_args(int argc, char *argv[])
+void Core::parse_args(int argc, char* argv[])
 {
     using std::size_t;
     using std::string_view;
@@ -247,7 +292,7 @@ void Core::parse_args(int argc, char *argv[])
 
     for (size_t i = 0; i < arguments.size(); ++i)
     {
-        const std::string_view &arg = arguments[i];
+        const std::string_view& arg = arguments[i];
 
         if (arg == "-dev")
         {
@@ -292,8 +337,8 @@ void Core::init_raylib()
     if (!IsWindowReady())
         throw exception::NoWindow();
 
-    logger.print_info()("Setting target FPS... ({})", m_raylibConfig.targetFPS);
-    SetTargetFPS(m_raylibConfig.targetFPS);
+    // logger.print_info()("Setting target FPS... ({})", m_raylibConfig.targetFPS);
+    // SetTargetFPS(m_raylibConfig.targetFPS);
 
     SetExitKey(KEY_NULL);
 }
@@ -317,7 +362,7 @@ void Core::handle_exception_init()
     {
         throw;
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         logger.print_error()("An unhandled exception occurred during program startup: {}", e.what());
 
@@ -332,7 +377,7 @@ void Core::handle_exception_run()
     {
         throw;
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         logger.print_error()("An unhandled exception occurred during program running: {}", e.what());
 
@@ -347,7 +392,7 @@ void Core::handle_exception_shutdown()
     {
         throw;
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         logger.print_error()("An unhandled exception occurred during program shutdown: {}", e.what());
 
@@ -356,9 +401,21 @@ void Core::handle_exception_shutdown()
     }
 }
 
-double Core::calculate_delta_time()
+double Core::calculate_delta_time() const
 {
     return std::chrono::duration<double>(time::since(m_timeLastFrame)).count();
+}
+
+int Core::calculate_fps() const
+{
+    const std::size_t deltaHistorySize = m_deltaHistory.size();
+
+    if (deltaHistorySize == 0)
+        return 0;
+
+    const double avg = m_deltaHistorySum / deltaHistorySize;
+
+    return static_cast<int>(std::round(1.0 / avg));
 }
 
 std::string Core::generate_screenshot_filename()

@@ -22,7 +22,7 @@
 
 namespace rotm
 {
-std::optional<std::string> write_tileset_metadata(const Tileset &tileset, const std::filesystem::path &tilesetPath)
+std::optional<std::string> write_tileset_metadata(const Tileset& tileset, const std::filesystem::path& tilesetPath)
 {
     const std::string filename = std::format("{}{}", tilesetPath.string(), TILESET_METADATA_EXT);
     std::ofstream file{filename, std::ios_base::binary};
@@ -45,7 +45,7 @@ std::optional<std::string> write_tileset_metadata(const Tileset &tileset, const 
     if (!write_to_stream(file, fileData.tileCount, &filepos))
         return std::format("Failed to write tile count to file. (filename={}, filepos={:#010x})", filename, filepos);
 
-    for (const auto &byte : fileData.usableTilesPacked)
+    for (const auto& byte : fileData.usableTilesPacked)
     {
         if (!write_to_stream(file, byte, &filepos))
             return std::format("Failed to write usable tiles to file. (filename={}, filepos={:#010x})", filename,
@@ -65,7 +65,7 @@ std::optional<std::string> write_tileset_metadata(const Tileset &tileset, const 
     return std::nullopt;
 }
 
-std::expected<TilesetMetadata, std::string> read_tileset_metadata(const std::filesystem::path &tilesetPath)
+std::expected<TilesetMetadata, std::string> read_tileset_metadata(const std::filesystem::path& tilesetPath)
 {
     using err_t = std::unexpected<std::string>;
 

@@ -12,7 +12,7 @@
 
 namespace rotm
 {
-void TilemapRenderer::update(const Tileset &tileset, Tilemap &tilemap, const Camera2D &camera)
+void TilemapRenderer::update(const Tileset& tileset, Tilemap& tilemap, const Camera2D& camera)
 {
     ZoneScopedN("TilemapRenderer::update");
 
@@ -21,9 +21,9 @@ void TilemapRenderer::update(const Tileset &tileset, Tilemap &tilemap, const Cam
     calculate_visible_chunks(tileSize, camera);
     build_render_list(tilemap);
 
-    for (const ChunkCoord &coord : m_renderList)
+    for (const ChunkCoord& coord : m_renderList)
     {
-        TilemapChunk *chunk = tilemap.get_chunk(coord);
+        TilemapChunk* chunk = tilemap.get_chunk(coord);
         if (!chunk)
             continue;
 
@@ -41,7 +41,7 @@ void TilemapRenderer::draw(int tileSize)
 
     m_chunksDrawnCount = 0;
 
-    for (const ChunkCoord &chunkCoord : m_visibleChunks)
+    for (const ChunkCoord& chunkCoord : m_visibleChunks)
     {
         const auto it = m_chunkCache.find(chunkCoord);
 
@@ -66,7 +66,7 @@ void TilemapRenderer::draw(int tileSize)
     }
 }
 
-void TilemapRenderer::draw_tile(const Tileset &tileset, GlobalTileCoord coord, const TileData &tile, Color tint)
+void TilemapRenderer::draw_tile(const Tileset& tileset, GlobalTileCoord coord, const TileData& tile, Color tint)
 {
     ZoneScopedN("TilemapRenderer::draw_tile");
 
@@ -83,7 +83,7 @@ void TilemapRenderer::draw_tile(const Tileset &tileset, GlobalTileCoord coord, c
     DrawTexturePro(tileset.get_atlas(), srcrec, dstrec, {0.0f, 0.0f}, 0.0f, tint);
 }
 
-void TilemapRenderer::calculate_visible_chunks(int tileSize, const Camera2D &camera)
+void TilemapRenderer::calculate_visible_chunks(int tileSize, const Camera2D& camera)
 {
     ZoneScoped;
 
@@ -110,16 +110,16 @@ void TilemapRenderer::calculate_visible_chunks(int tileSize, const Camera2D &cam
     }
 }
 
-void TilemapRenderer::build_render_list(const Tilemap &tilemap)
+void TilemapRenderer::build_render_list(const Tilemap& tilemap)
 {
     ZoneScopedN("TilemapRenderer::build_render_list");
 
     m_renderList.clear();
     m_renderList.reserve(m_visibleChunks.size());
 
-    for (const ChunkCoord &chunkCoord : m_visibleChunks)
+    for (const ChunkCoord& chunkCoord : m_visibleChunks)
     {
-        const TilemapChunk *chunk = tilemap.get_chunk(chunkCoord);
+        const TilemapChunk* chunk = tilemap.get_chunk(chunkCoord);
 
         if (!chunk)
         {
@@ -158,7 +158,7 @@ void TilemapRenderer::discard_old_chunks()
 
     for (auto it = m_chunkCache.begin(); it != m_chunkCache.end(); ++it)
     {
-        const CachedChunk &cc = it->second;
+        const CachedChunk& cc = it->second;
 
         const time::Duration chunkAge = timeNow - cc.timeLastSeen;
 
@@ -175,11 +175,11 @@ void TilemapRenderer::discard_old_chunks()
     }
 }
 
-void TilemapRenderer::draw_chunk(const ChunkCoord &chunkCoord, const CachedChunk &chunk, int tileSize)
+void TilemapRenderer::draw_chunk(const ChunkCoord& chunkCoord, const CachedChunk& chunk, int tileSize)
 {
     ZoneScopedN("TilemapRenderer::draw_chunk");
 
-    const Texture2D &texture = chunk.renderTexture.texture;
+    const Texture2D& texture = chunk.renderTexture.texture;
 
     const Vector2 chunkPos = tile_to_point({.chunk = chunkCoord, .tile = {0, 0}}, tileSize);
 
@@ -208,7 +208,7 @@ TilemapRenderer::CachedChunk::~CachedChunk()
         UnloadRenderTexture(renderTexture);
 }
 
-void TilemapRenderer::CachedChunk::render(const Tileset &tileset, TilemapChunk &chunk)
+void TilemapRenderer::CachedChunk::render(const Tileset& tileset, TilemapChunk& chunk)
 {
     ZoneScopedN("TilemapRenderer::CachedChunk::render");
 
@@ -219,7 +219,7 @@ void TilemapRenderer::CachedChunk::render(const Tileset &tileset, TilemapChunk &
     {
         for (int x = 0; x < static_cast<int>(TilemapChunk::SIZE); ++x)
         {
-            const TileData &tile = chunk.get_tile({x, y});
+            const TileData& tile = chunk.get_tile({x, y});
 
             TilemapRenderer::draw_tile(tileset, {.chunk = {0, 0}, .tile = {x, y}}, tile);
         }
